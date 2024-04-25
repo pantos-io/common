@@ -60,6 +60,7 @@ jobs:
 
       - name: List directory
         run: |
+          mkdir -p release
           cp dist/*.whl release/
 
       - uses: sigstore/gh-action-sigstore-python@v2.1.1

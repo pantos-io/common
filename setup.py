@@ -12,4 +12,5 @@ setuptools.setup(
         'JSON-log-formatter==0.5.2', 'PyYAML==6.0.1', 'requests==2.31.0',
         'web3==6.5.0', 'pyaml-env==1.2.1', 'python-dotenv==1.0.1',
         'hexbytes==0.3.1'
-    ])
+    ], url='https://github.com/pantos-io/common', author='Pantos',
+    long_description=('Common code for the Pantos off-chain components'))
