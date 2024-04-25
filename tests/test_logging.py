@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest.mock
 
-import json_log_formatter
+import json_log_formatter  # type: ignore
 import pytest
 
 from pantos.common.blockchains.enums import Blockchain

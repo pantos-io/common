@@ -48,7 +48,7 @@ def ethereum_utilities(mock_create_node_connections, blockchain_node_urls,
         blockchain_node_urls, fallback_blockchain_node_urls,
         average_block_time, required_transaction_confirmations,
         transaction_network_id,
-        default_private_key=(account.keystore_path, account.keystore_password),
+        default_private_key=(account.keystore, account.keystore_password),
         celery_tasks_enabled=True)
     mock_create_node_connections.return_value = node_connections
     ethereum_utilities.create_node_connections = mock_create_node_connections
@@ -219,10 +219,11 @@ def test_is_equal_address(ethereum_utilities):
                                                address.lower()) is True
 
 
-def test_load_private_key(ethereum_utilities, account):
-    private_key = ethereum_utilities.load_private_key(
-        account.keystore_path, account.keystore_password)
-    assert private_key == account.private_key
+def test_decrypt_private_encrypted_key(ethereum_utilities, account):
+    with open(account.keystore_path, 'r') as file:
+        private_key = ethereum_utilities.decrypt_private_key(
+            file.read(), account.keystore_password)
+        assert private_key == account.private_key
 
 
 def test_get_blockchain_correct(ethereum_utilities):

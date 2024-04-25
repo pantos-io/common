@@ -259,7 +259,7 @@ class NodeConnections(typing.Generic[N]):
 
         def __call__(
                 self, *args: typing.Any, **kwargs: typing.Any) -> \
-                'NodeConnections.Wrapper' | typing.Any:
+                typing.Union['NodeConnections.Wrapper', typing.Any]:
             """Forward the called method to the wrapped objects. If it
             sends a transaction to the blockchain node, it will be
             forwarded to only one of them, randomly chosen.
@@ -428,8 +428,7 @@ class BlockchainUtilities(BlockchainHandler,
                  average_block_time: int,
                  required_transaction_confirmations: int,
                  transaction_network_id: typing.Optional[int],
-                 default_private_key: typing.Optional[tuple[pathlib.Path,
-                                                            str]] = None,
+                 default_private_key: typing.Optional[tuple[str, str]] = None,
                  celery_tasks_enabled: bool = False):
         """Construct a blockchain utilities instance.
 
@@ -454,9 +453,9 @@ class BlockchainUtilities(BlockchainHandler,
             different compatible blockchain networks). It is assumed to
             be the identifier of the main or a test network of the
             blockchain supported by the blockchain utilities subclass.
-        default_private_key : tuple of pathlib.Path and str, optional
-            The keystore file path and password of the default private
-            key to be used by the blockchain utilities (default: None).
+        default_private_key : tuple of str and str, optional
+            The keystore value and password of the default private
+            key to be used by the blockchain utilities. (default: None).
         celery_tasks_enabled : bool, optional
             If True, Celery tasks are enabled for enhanced
             functionalities (default: False). This requires a proper
@@ -491,7 +490,7 @@ class BlockchainUtilities(BlockchainHandler,
         self._blockchain_node_urls = blockchain_node_urls
         self._fallback_blockchain_node_urls = fallback_blockchain_node_urls
         self._default_private_key = (
-            None if default_private_key is None else self.load_private_key(
+            None if default_private_key is None else self.decrypt_private_key(
                 default_private_key[0], default_private_key[1]))
         self._default_address = (None if self._default_private_key is None else
                                  self.get_address(self._default_private_key))
@@ -690,15 +689,15 @@ class BlockchainUtilities(BlockchainHandler,
                                      contract_abi=contract_abi)
 
     @abc.abstractmethod
-    def load_private_key(self, key_path: pathlib.Path, password: str) -> str:
-        """Load the private key from a password-encrypted key file.
+    def decrypt_private_key(self, encrypted_key: str, password: str) -> str:
+        """Load the private key from a password-encrypted key.
 
         Parameters
         ----------
-        key_path : pathlib.Path
-            The path to the key file.
+        encrypted_key: str
+            The encrypted key.
         password : str
-            The password to decrypt the key file.
+            The password to decrypt the key.
 
         Returns
         -------
@@ -708,7 +707,7 @@ class BlockchainUtilities(BlockchainHandler,
         Raises
         ------
         BlockchainUtilitiesError
-            If the private key cannot be loaded from the key file.
+            If the private key cannot be decrypted.
 
         """
         pass  # pragma: no cover

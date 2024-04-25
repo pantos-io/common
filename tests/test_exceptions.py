@@ -30,6 +30,7 @@ class _Superclass(ErrorCreator[_SuperclassError]):
 
 
 class _Subclass(_Superclass):
+    @classmethod
     def get_error_class(cls):
         return _SubclassError
 

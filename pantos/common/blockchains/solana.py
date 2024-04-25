@@ -1,7 +1,6 @@
 """Module for Solana-specific utilities and errors.
 
 """
-import pathlib
 import typing
 
 from pantos.common.blockchains.base import BlockchainUtilities
@@ -27,8 +26,7 @@ class SolanaUtilities(BlockchainUtilities):
                  average_block_time: int,
                  required_transaction_confirmations: int,
                  transaction_network_id: typing.Optional[int],
-                 default_private_key: typing.Optional[tuple[pathlib.Path,
-                                                            str]] = None,
+                 default_private_key: typing.Optional[tuple[str, str]] = None,
                  celery_tasks_enabled: bool = False):
         # Docstring inherited
         super().__init__(blockchain_node_urls, fallback_blockchain_node_urls,
@@ -71,7 +69,7 @@ class SolanaUtilities(BlockchainUtilities):
         # Docstring inherited
         raise NotImplementedError  # pragma: no cover
 
-    def load_private_key(self, key_path: pathlib.Path, password: str) -> str:
+    def decrypt_private_key(self, encrypted_key: str, password: str) -> str:
         # Docstring inherited
         raise NotImplementedError  # pragma: no cover
 
