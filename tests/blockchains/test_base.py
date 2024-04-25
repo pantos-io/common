@@ -61,26 +61,26 @@ def blockchain_utilities(blockchain_node_urls, fallback_blockchain_node_urls,
         blockchain_node_urls, fallback_blockchain_node_urls,
         average_block_time, required_transaction_confirmations,
         transaction_network_id,
-        default_private_key=(account.keystore_path, account.keystore_password),
+        default_private_key=(account.keystore, account.keystore_password),
         celery_tasks_enabled=True)
 
 
 @pytest.mark.parametrize('celery_tasks_enabled', [True, False])
-@unittest.mock.patch.object(BlockchainUtilities, 'load_private_key')
+@unittest.mock.patch.object(BlockchainUtilities, 'decrypt_private_key')
 @unittest.mock.patch.object(BlockchainUtilities, 'get_address')
 @unittest.mock.patch.object(BlockchainUtilities, '__abstractmethods__', set())
-def test_init_correct(mock_get_address, mock_load_private_key,
+def test_init_correct(mock_get_address, mock_decrypt_private_key,
                       celery_tasks_enabled, blockchain_node_urls,
                       fallback_blockchain_node_urls, average_block_time,
                       required_transaction_confirmations,
                       transaction_network_id, account):
     mock_get_address.return_value = account.address
-    mock_load_private_key.return_value = account.private_key
+    mock_decrypt_private_key.return_value = account.private_key
     blockchain_utilities = BlockchainUtilities(
         blockchain_node_urls, fallback_blockchain_node_urls,
         average_block_time, required_transaction_confirmations,
         transaction_network_id,
-        default_private_key=(account.keystore_path, account.keystore_password),
+        default_private_key=(account.keystore, account.keystore_password),
         celery_tasks_enabled=celery_tasks_enabled)
     assert blockchain_utilities.average_block_time == average_block_time
     assert (blockchain_utilities.required_transaction_confirmations ==

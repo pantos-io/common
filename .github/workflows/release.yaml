@@ -1,0 +1,115 @@
+name: Release Workflow
+run-name: ${{ (github.event.release.prerelease && 'Beta') || 'Prod'}} Release for ${{ github.repository }} - ${{ github.event.release.tag_name }}
+on:
+  release:
+    # Triggered on Pre-Releases and Releases
+    types: [released, prereleased]
+
+# Only allow one release at the time
+concurrency:
+  group: deploy-${{ github.repository }}-release-${{ github.event.release.prerelease }}
+
+jobs:
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+          cache: 'pip'
+  
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install -r requirements.txt
+
+      - name: Build package
+        run: |
+          source .venv/bin/activate
+          pip install build
+          python -m build
+        env:
+          PANTOS_COMMON_VERSION: ${{ github.event.release.tag_name }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: common
+          path: dist
+
+  add-assets:
+    name: Add Assets to the ${{ github.event.release.tag_name }} Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: common
+          path: dist
+
+      - name: List directory
+        run: |
+          mkdir -p release
+          cp dist/*.whl release/
+
+      - uses: sigstore/gh-action-sigstore-python@v2.1.1
+        with:
+          inputs: release/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-common
+          path: release/*.whl
+
+      - name: Upload release assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: "./release/*"
+          file_glob: true
+          overwrite: true
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.event.release.tag_name }}
+      
+      - uses: robinraju/release-downloader@v1.9
+        name: Download tarball
+        with:
+          tag: ${{ github.event.release.tag_name }}
+          tarBall: true
+          zipBall: true
+          fileName: '*'
+          out-file-path: external-release
+          preRelease: ${{ github.event.release.prerelease }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+
+      - name: List directory
+        run: |
+          ls -lha external-release
+          # Remove all the files in external-release that are also present in release
+          for file in $(ls release); do
+            rm -f external-release/$file
+          done
+
+      - uses: sigstore/gh-action-sigstore-python@v2.1.1
+        with:
+          inputs: external-release/*
+
+      - name: Upload signed source code
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "./external-release/*"
+          artifactErrorsFailBuild: true
+          allowUpdates: true
+          tag: ${{ github.event.release.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}

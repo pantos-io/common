@@ -1,5 +1,4 @@
 import getpass
-import pathlib
 import typing
 
 import Crypto.PublicKey.ECC
@@ -28,19 +27,19 @@ class SignerError(Exception):
 
 
 class _Signer:
-    def __init__(self, pem_path: str, pem_password: str):
+    def __init__(self, pem_value: str, pem_password: str):
         """
         Constructor of Signer class.
 
         Parameters
         ----------
-        pem_path : str
-            Path to the PEM file containing the private key.
+        pem_value : str
+            Value of the encrypted private key.
         pem_password : str
             Password to unlock the PEM file.
 
         """
-        self.__signer = self._load_signer(pem_path, pem_password)
+        self.__signer = self._load_signer(pem_value, pem_password)
 
     def sign_message(self, message: str) -> str:
         """Sign a message.
@@ -127,15 +126,15 @@ class _Signer:
         return message[:-1]
 
     def _load_signer(
-            self, pem_path: str,
+            self, pem_value: str,
             pem_password: str) -> Crypto.Signature.eddsa.EdDSASigScheme:
         """Load the EdDSA signer object from a password-encrypted pem file.
         The key must be on the curve Ed25519 or Ed448.
 
         Parameters
         ----------
-        pem_path : str
-            Path to the PEM file containing the private key.
+        pem_value : str
+            Value of the encrypted private key.
         pem_password : str
             Password to unlock the PEM file.
 
@@ -151,15 +150,12 @@ class _Signer:
 
         """
         try:
-            private_key_path = pathlib.Path(pem_path)
-            if not private_key_path.is_file():
-                raise SignerError(
-                    f'private key "{private_key_path}" is not a file')
             if pem_password is None:
                 pem_password = getpass.getpass(
                     'Password for decrypting the pem file')
+
             private_key = Crypto.PublicKey.ECC.import_key(
-                open(private_key_path).read(), passphrase=pem_password)
+                pem_value, passphrase=pem_password)
             return Crypto.Signature.eddsa.new(private_key,
                                               'rfc8032')  # type: ignore
         except SignerError:
@@ -171,13 +167,13 @@ class _Signer:
 _signer: typing.Optional[_Signer] = None
 
 
-def get_signer(pem_path: str, pem_password: str) -> _Signer:
+def get_signer(pem_value: str, pem_password: str) -> _Signer:
     """Get a _Signer object.
 
     Parameters
     ----------
-    pem_path : str
-        Path to the PEM file containing the private key.
+    pem_value : str
+        Value of the encrypted private key.
     pem_password : str
         Password to unlock the PEM file.
 
@@ -194,5 +190,5 @@ def get_signer(pem_path: str, pem_password: str) -> _Signer:
     """
     global _signer
     if not _signer:
-        _signer = _Signer(pem_path, pem_password)
+        _signer = _Signer(pem_value, pem_password)
     return _signer

@@ -7,3 +7,5 @@
 build/
 dist/
 find.sh
+local/
+.coverage

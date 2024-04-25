@@ -55,6 +55,7 @@ class ContractAbi(enum.Enum):
     STANDARD_TOKEN = 0
     PANTOS_TOKEN = 1
     PANTOS_HUB = 2
+    PANTOS_FORWARDER = 3
 
     def get_file_name(self, blockchain: Blockchain) -> str:
         """Get the name of the contract ABI file.

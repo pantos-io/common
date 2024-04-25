@@ -117,6 +117,7 @@ class _DataDogJSONFormatter(json_log_formatter.VerboseJSONFormatter):
             The dictionary of the record.
 
         """
+        extra['levelname'] = record.levelname
         if 'time' not in extra:
             extra['time'] = datetime.datetime.utcnow()
 

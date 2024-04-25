@@ -30,6 +30,8 @@ def test_blockchain_from_name_error():
     [(ContractAbi.PANTOS_HUB, Blockchain.ETHEREUM, 'ethereum_pantos_hub.abi'),
      (ContractAbi.STANDARD_TOKEN, Blockchain.BNB_CHAIN,
       'bnb_chain_standard_token.abi'),
+     (ContractAbi.PANTOS_FORWARDER, Blockchain.CELO,
+      'celo_pantos_forwarder.abi'),
      (ContractAbi.PANTOS_TOKEN, Blockchain.AVALANCHE,
       'avalanche_pantos_token.abi')])
 def test_contract_abi_get_file_name_correct(contract_abi, blockchain,

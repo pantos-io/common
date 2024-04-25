@@ -1,7 +1,6 @@
 """Factory for Pantos blockchain utilities.
 
 """
-import pathlib
 import typing
 
 from pantos.common.blockchains.base import BlockchainUtilities
@@ -20,7 +19,7 @@ def initialize_blockchain_utilities(
         fallback_blockchain_node_urls: list[str], average_block_time: int,
         required_transaction_confirmations: int,
         transaction_network_id: typing.Optional[int],
-        default_private_key: typing.Optional[tuple[pathlib.Path, str]] = None,
+        default_private_key: typing.Optional[tuple[str, str]] = None,
         celery_tasks_enabled: bool = False) -> None:
     """Initialize the utilities for the specified blockchain.
 
@@ -47,9 +46,9 @@ def initialize_blockchain_utilities(
         compatible blockchain networks). It is assumed to be the
         identifier of the main or a test network of the specified
         blockchain.
-    default_private_key : tuple of pathlib.Path and str, optional
-        The keystore file path and password of the default private key
-        to be used by the blockchain utilities (default: None).
+    default_private_key : tuple of str and str, optional
+        The keystore value and password of the default private
+        key to be used by the blockchain utilities. (default: None).
     celery_tasks_enabled : bool, optional
         If True, Celery tasks are enabled for enhanced functionalities
         (default: False). This requires a proper Celery environment to

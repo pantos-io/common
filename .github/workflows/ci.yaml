@@ -1,0 +1,75 @@
+name: Format, Lint, and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  Format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-deps
+
+      - name: Format
+        run: make format-check
+
+  Lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-deps
+
+      - name: Lint
+        run: make lint
+
+  Sort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-deps
+
+      - name: Sort
+        run: make sort-check
+
+  Bandit:
+    name: Bandit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-deps
+
+      - name: Bandit
+        run: make bandit
+
+  StaticCodeAnalysis:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+    needs: [Format, Lint, Sort, Bandit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-deps
+      
+      - name: StaticCodeAnalysis
+        run: |
+          make check
+
+  UnitTest:
+    name: Unit Test
+    runs-on: ubuntu-latest
+    needs: [Format, Lint, Sort, Bandit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/install-deps
+      
+      - name: Unit Test
+        run: |
+            make coverage

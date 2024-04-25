@@ -1,16 +1,52 @@
 """Module for loading and parsing a configuration file.
 
 """
+import errno
 import importlib.resources
 import logging
+import os
 import pathlib
 
 import cerberus  # type: ignore
+import dotenv
+import pyaml_env  # type: ignore
 import yaml
 
 from pantos.common.exceptions import BaseError
 
 _logger = logging.getLogger(__name__)
+
+# Ordered by priority
+_CONFIGURATION_PATHS = [
+    pathlib.Path.cwd(),
+    pathlib.Path.home(),
+    pathlib.Path.home() / '.config',
+    pathlib.Path('/etc/pantos'),
+    pathlib.Path('/etc')
+]
+
+if os.environ.get('PANTOS_CONFIG'):
+    _logger.info('loading configuration from environment variable '
+                 'PANTOS_CONFIG')
+    _CONFIGURATION_PATHS.insert(0, pathlib.Path(os.environ['PANTOS_CONFIG']))
+
+
+class _CustomValidator(cerberus.Validator):
+    def _validate_one_not_present(self, other: str, field: str, value: str):
+        if (bool(value)) == (bool(self.document.get(other))):
+            self._error(field, "only one field can be present: " + other)
+
+    def _normalize_coerce_load_if_file(self, value: str):
+        path = pathlib.Path(value)
+        try:
+            # This method may trigger an exception if the path is not valid
+            if path.is_file():
+                with open(path, 'r') as file:
+                    return file.read()
+        except OSError as error:
+            if error.errno != errno.ENAMETOOLONG:
+                raise error
+        return value
 
 
 class ConfigError(BaseError):
@@ -80,26 +116,12 @@ class Config:
                                   '{}'.format(file_path))
             return path
         # Find the configuration file at common locations
-        # Current working directory
-        path = pathlib.Path.cwd() / self.default_file_name
-        if path.is_file():
-            return path
-        # Home directory
-        path = pathlib.Path.home() / self.default_file_name
-        if path.is_file():
-            return path
-        # Hidden file in home directory
-        path = pathlib.Path.home() / '.{}'.format(self.default_file_name)
-        if path.is_file():
-            return path
-        # Subdirectory .config in home directory
-        path = pathlib.Path.home() / '.config' / self.default_file_name
-        if path.is_file():
-            return path
-        # Configuration directory /etc
-        path = pathlib.Path('/etc') / self.default_file_name
-        if path.is_file():
-            return path
+        for path in _CONFIGURATION_PATHS:
+            config_path = path
+            if config_path.is_dir():
+                config_path = config_path / self.default_file_name
+            if config_path.is_file():
+                return config_path
         # Package resource
         if importlib.resources.is_resource('pantos', self.default_file_name):
             with importlib.resources.path('pantos',
@@ -113,20 +135,34 @@ class Config:
 
         """
         assert isinstance(path, pathlib.Path)
-        with path.open() as config_file:
-            # Parse the YAML code in the configuration file
-            try:
-                return yaml.safe_load(config_file)
-            except yaml.YAMLError as error:
-                if hasattr(error, 'problem_mark'):
-                    line = error.problem_mark.line + 1
-                    column = error.problem_mark.column + 1
-                    raise ConfigError('YAML code in configuration file '
-                                      'invalid at line {} and '
-                                      'column {}'.format(line, column))
-                else:
-                    raise ConfigError('YAML code in configuration file '
-                                      'invalid')
+        # List of potential .env file paths
+        env_files = [
+            pathlib.Path(path.as_posix() + '.env'),
+            pathlib.Path(path.with_suffix('.env').as_posix())
+        ]
+
+        # Iterate over the potential .env file paths
+        for env_file in env_files:
+            if env_file.is_file():
+                try:
+                    dotenv.load_dotenv(env_file)
+                    _logger.info(f'loaded .env from file {env_file}')
+                    break
+                except Exception:
+                    raise ConfigError(f'unable to load .env file {env_file}')
+        # Parse the YAML code in the configuration file
+        try:
+            return pyaml_env.parse_config(path.as_posix(), default_value='')
+        except yaml.YAMLError as error:
+            if hasattr(error, 'problem_mark'):
+                line = error.problem_mark.line + 1
+                column = error.problem_mark.column + 1
+                raise ConfigError('YAML code in configuration file '
+                                  'invalid at line {} and '
+                                  'column {}'.format(line, column))
+            else:
+                raise ConfigError('YAML code in configuration file '
+                                  'invalid')
 
     def __validate(self, config_dict, validation_schema):
         """TODO
@@ -136,7 +172,7 @@ class Config:
         assert isinstance(validation_schema, dict)
         # Create the validator and validate the validation schema
         try:
-            validator = cerberus.Validator(validation_schema)
+            validator = _CustomValidator(validation_schema)
         except cerberus.schema.SchemaError as error:
             raise ConfigError('validation schema invalid: {}'.format(error))
         # Validate the configuration
