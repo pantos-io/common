@@ -15,27 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.10
-          cache: 'pip'
-  
-      - name: Install dependencies
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          python -m pip install -r requirements.txt
+      - uses: ./.github/actions/install-deps
 
       - name: Build package
         run: |
-          source .venv/bin/activate
-          pip install build
-          python -m build
+          make wheel
         env:
           PANTOS_COMMON_VERSION: ${{ github.event.release.tag_name }}
 
