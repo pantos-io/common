@@ -1,48 +1,52 @@
-PYTHON_FILES := pantos/common scripts tests ./*.py
+PYTHON_FILES := pantos/common scripts tests
 
 .PHONY: code
 code: check format lint sort bandit test
 
 .PHONY: check
 check:
-	mypy $(PYTHON_FILES)
+	poetry run mypy $(PYTHON_FILES)
 
 .PHONY: test
 test:
-	python3 -m pytest tests
+	poetry run python3 -m pytest tests
 
 .PHONY: coverage
 coverage:
 	rm -rf .coverage
-	python3 -m pytest --cov-report term-missing --cov=pantos tests
+	poetry run python3 -m pytest --cov-report term-missing --cov=pantos tests
 
 .PHONY: lint
 lint:
-	flake8 $(PYTHON_FILES)
+	poetry run flake8 $(PYTHON_FILES)
 
 .PHONY: sort
 sort:
-	isort --force-single-line-imports $(PYTHON_FILES)
+	poetry run isort --force-single-line-imports $(PYTHON_FILES)
 
 .PHONY: sort-check
 sort-check:
-	isort --force-single-line-imports $(PYTHON_FILES) --check-only
+	poetry run isort --force-single-line-imports $(PYTHON_FILES) --check-only
 
 .PHONY: bandit
 bandit:
-	bandit -r $(PYTHON_FILES) --quiet --configfile=.bandit
+	poetry run bandit -r $(PYTHON_FILES) --quiet --configfile=.bandit
 
 .PHONY: bandit-check
 bandit-check:
-	bandit -r $(PYTHON_FILES) --configfile=.bandit
+	poetry run bandit -r $(PYTHON_FILES) --configfile=.bandit
 
 .PHONY: format
 format:
-	yapf --in-place --recursive $(PYTHON_FILES)
+	poetry run yapf --in-place --recursive $(PYTHON_FILES)
 
 .PHONY: format-check
 format-check:
-	yapf --diff --recursive $(PYTHON_FILES)
+	poetry run yapf --diff --recursive $(PYTHON_FILES)
+
+.PHONY: wheel
+wheel:
+	poetry build -f wheel
 
 .PHONY: clean
 clean:
