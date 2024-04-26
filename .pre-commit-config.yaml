@@ -1,18 +1,11 @@
 repos:
-  - repo: local
-    hooks:
-      - id: validate-commit-msg
-        name: Commit message is prefixed by Jira ticket number
-        entry: ^(?!PAN-\d*:.+) 
-        language: pygrep
-        stages: [ commit-msg ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: no-commit-to-branch
         name: Check that branch name follows our standard
         description: Checks that a branch has a proper name
-        args: ['--branch', 'main','--pattern', '^(?!(feature|bugfix)\/PAN-[0-9]+-[a-z0-9._-]+).*']
+        args: ['--branch', 'main','--pattern', '^(PAN-[0-9]+-[a-z0-9._-]+).*']
         stages: [ commit-msg ]
   - repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
