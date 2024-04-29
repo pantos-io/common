@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "common"
+name = "pantos-common"
 version = "1.1.0"
 description = "Common code for Pantos off-chain components."
 authors = ["Pantos <contact@pantos.io>"]
@@ -22,6 +22,9 @@ mypy = "1.0.1"
 types-pyyaml = "6.0.12.10"
 types-requests = "2.31.0.1"
 yapf = "0.40.1"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "3.3.3"
 
 [tool.poetry.dependencies]
 python = "3.12.2"

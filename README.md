@@ -58,7 +58,7 @@ poetry config virtualenvs.in-project true
 Create the virtual environment and install the dependencies:
 
 ```bash
-$ poetry install
+$ poetry install --no-root
 ```
 
 ## 3. Usage
