@@ -7,14 +7,13 @@ code: check format lint sort bandit test
 check:
 	poetry run mypy $(PYTHON_FILES)
 
-.PHONY: test
-test:
-	poetry run python3 -m pytest tests
+.PHONY: format
+format:
+	poetry run yapf --in-place --recursive $(PYTHON_FILES)
 
-.PHONY: coverage
-coverage:
-	rm -rf .coverage
-	poetry run python3 -m pytest --cov-report term-missing --cov=pantos tests
+.PHONY: format-check
+format-check:
+	poetry run yapf --diff --recursive $(PYTHON_FILES)
 
 .PHONY: lint
 lint:
@@ -36,13 +35,13 @@ bandit:
 bandit-check:
 	poetry run bandit -r $(PYTHON_FILES) --configfile=.bandit
 
-.PHONY: format
-format:
-	poetry run yapf --in-place --recursive $(PYTHON_FILES)
+.PHONY: test
+test:
+	poetry run python3 -m pytest tests
 
-.PHONY: format-check
-format-check:
-	poetry run yapf --diff --recursive $(PYTHON_FILES)
+.PHONY: coverage
+coverage:
+	poetry run python3 -m pytest --cov-report term-missing --cov=pantos tests
 
 .PHONY: wheel
 wheel:
