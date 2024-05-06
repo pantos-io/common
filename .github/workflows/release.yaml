@@ -16,13 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/install-deps
+      - uses: pantos-io/ci-workflows/.github/actions/install-poetry@v1
 
       - name: Build package
-        run: |
-          make wheel
-        env:
-          PANTOS_COMMON_VERSION: ${{ github.event.release.tag_name }}
+        run: make wheel
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
