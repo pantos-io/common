@@ -15,29 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.10
-          cache: 'pip'
-  
-      - name: Install dependencies
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          python -m pip install -r requirements.txt
+      - uses: pantos-io/ci-workflows/.github/actions/install-poetry@v1
 
       - name: Build package
-        run: |
-          source .venv/bin/activate
-          pip install build
-          python -m build
-        env:
-          PANTOS_COMMON_VERSION: ${{ github.event.release.tag_name }}
+        run: make wheel
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

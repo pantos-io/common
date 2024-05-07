@@ -31,31 +31,34 @@ Please make sure that your environment meets the following requirements:
 
 #### Python Version
 
-The Pantos Client CLI requires **Python 3.10**. Ensure that you have the correct Python version installed before the installation steps. You can download the latest version of Python from the official [Python website](https://www.python.org/downloads/).
+Pantos Common supports **Python 3.10** or higher. Ensure that you have the correct Python version installed before the installation steps. You can download the latest version of Python from the official [Python website](https://www.python.org/downloads/).
 
 #### Library Versions
 
-The Pantos Common project has been tested with the library versions in **requirements.txt**.
+The Pantos Common project has been tested with the library versions specified in **poetry.lock**.
+
+#### Poetry
+
+Poetry is our tool of choice for dependency management and packaging.
+
+Installing: 
+https://python-poetry.org/docs/#installing-with-the-official-installer
+or
+https://python-poetry.org/docs/#installing-with-pipx
+
+By default poetry creates the venv directory under under ```{cache-dir}/virtualenvs```. If you opt for creating the virtualenv inside the project’s root directory, execute the following command:
+```bash
+poetry config virtualenvs.in-project true
+```
 
 ### 2.2  Installation Steps
 
-#### Virtual environment
+#### Libraries
 
-Create a virtual environment from the repository's root directory:
-
-```bash
-$ python -m venv .venv
-```
-
-Activate the virtual environment:
+Create the virtual environment and install the dependencies:
 
 ```bash
-$ source .venv/bin/activate
-```
-
-Install the required packages:
-```bash
-$ python -m pip install -r requirements.txt
+$ poetry install --no-root
 ```
 
 ## 3. Usage
@@ -65,7 +68,3 @@ The Pantos Common project should be used as a utility library, for example as a 
 ### 3.1 Examples
 
 https://github.com/pantos-io/client-library/blob/main/pantos/client/library/blockchains/base.py
-
-## 4. Contributing
-
-At the moment, contributing to this project is not available. 
