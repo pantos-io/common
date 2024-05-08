@@ -1,3 +1,5 @@
+ ![CI tests](https://github.com/pantos-io/common/actions/workflows/ci.yml/badge.svg?branch=main)
+
 # Common code for Pantos off-chain components
 
 ## 1. Introduction
