@@ -1,15 +1,15 @@
 name: Sonar
 
-# on:
-#   workflow_run:
-#     workflows: [CI]
-#     types: [completed]
-
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
 
 jobs:
   shared:
