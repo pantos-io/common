@@ -1,0 +1,9 @@
+name: Sonar
+
+workflow_run:
+  workflows: [CI]
+  types: [completed]
+
+jobs:
+  shared:
+    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@164b22d
