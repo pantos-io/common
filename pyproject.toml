@@ -2,7 +2,7 @@
 name = "pantos-common"
 version = "1.1.0"
 description = "Common code for Pantos off-chain components."
-authors = ["Pantos <contact@pantos.io>"]
+authors = ["Pantos GmbH <contact@pantos.io>"]
 license = "GPL-3.0-only"
 readme = "README.md"
 packages = [
