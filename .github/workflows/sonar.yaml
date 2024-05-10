@@ -13,5 +13,4 @@ on:
 
 jobs:
   shared:
-    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@1540b699f0ca4fbc37f6fc2296eacb7b61a846e1
-    secrets: inherit
+    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@968394c490cea66b0073b65d9ac76bf098c1da1a
