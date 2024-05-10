@@ -1,5 +1,9 @@
 PYTHON_FILES := pantos/common scripts tests
 
+.PHONY: wheel
+wheel:
+	poetry build -f wheel
+
 .PHONY: code
 code: check format lint sort bandit test
 
@@ -42,10 +46,6 @@ test:
 .PHONY: coverage
 coverage:
 	poetry run python3 -m pytest --cov-report term-missing --cov=pantos tests
-
-.PHONY: wheel
-wheel:
-	poetry build -f wheel
 
 .PHONY: clean
 clean:
