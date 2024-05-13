@@ -5,13 +5,7 @@ on:
     workflows: [CI]
     types: [completed]
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-
 jobs:
   shared:
     uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@0fe4b48e705c2ba72be3aff2daf331a3a10fec43
-    secrets: inherit
+
