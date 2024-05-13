@@ -8,5 +8,6 @@ on:
 
 jobs:
   shared:
-    uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@v1
-    secrets: inherit  
+    #uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@84c18c1b5bf447e4a02f94c45c5266abab52bd55
+    uses: juanmanuel-tirado/ci-workflows/.github/workflows/python-ci.yml@45980a74f6d11f4149b517457cba7f8df206923b
+
