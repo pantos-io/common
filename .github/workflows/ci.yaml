@@ -8,4 +8,4 @@ on:
 
 jobs:
   shared:
-    uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@v1.0.3
+    uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@v1

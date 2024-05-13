@@ -7,4 +7,4 @@ on:
 
 jobs:
   shared:
-    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@v1.0.3
+    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@v1
