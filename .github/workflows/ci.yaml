@@ -8,4 +8,4 @@ on:
 
 jobs:
   shared:
-    uses: juanmanuel-tirado/ci-workflows/.github/workflows/python-ci.yml@b8b773414ecbc890b9eb5d0f8230888e5b4a51d1
+    uses: juanmanuel-tirado/ci-workflows/.github/workflows/python-ci.yml@c999a329fe3fa7f354b96ce22c0733e81e9ae11e
