@@ -7,10 +7,6 @@ on:
 
 jobs:
   shared:
-<<<<<<< HEAD
     #uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@b4f84736d0bfdce801b59ce862847885da3db776
-    uses: juanmanuel-tirado/ci-workflows/.github/workflows/sonar.yaml@45980a74f6d11f4149b517457cba7f8df206923b
-=======
-    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@0fe4b48e705c2ba72be3aff2daf331a3a10fec43
->>>>>>> parent of 8035e5b (Update sonar.yaml)
-    secrets: inherit
+    uses: juanmanuel-tirado/ci-workflows/.github/workflows/sonar.yaml@3059ecb6ec3795d23a647c391c24b52f2919865a
+
