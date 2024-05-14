@@ -1,17 +1,9 @@
 name: Sonar
 
-on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
+workflow_run:
+  workflows: [CI]
+  types: [completed]
 
 jobs:
   shared:
-    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@b4f84736d0bfdce801b59ce862847885da3db776
-    secrets: inherit
+    uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@v1
