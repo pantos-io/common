@@ -8,5 +8,5 @@ on:
 jobs:
   shared:
     #uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@b4f84736d0bfdce801b59ce862847885da3db776
-    uses: juanmanuel-tirado/ci-workflows/.github/workflows/sonar.yaml@3059ecb6ec3795d23a647c391c24b52f2919865a
+    uses: juanmanuel-tirado/ci-workflows/.github/workflows/sonar.yaml@bfa40a057ee83727f0fef501169ceceef5a855e7
 
