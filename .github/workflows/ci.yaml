@@ -8,5 +8,4 @@ on:
 
 jobs:
   shared:
-    uses: juanmanuel-tirado/ci-workflows/.github/workflows/python-ci.yml@e91a1fba1497a080ff851ff91851bb8c5322732f
-    secrets: inherit  
+    uses: juanmanuel-tirado/ci-workflows/.github/workflows/python-ci.yml@b8b773414ecbc890b9eb5d0f8230888e5b4a51d1
