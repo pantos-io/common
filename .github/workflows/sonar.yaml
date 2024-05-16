@@ -1,8 +1,9 @@
 name: Sonar
 
-workflow_run:
-  workflows: [CI]
-  types: [completed]
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 jobs:
   shared:
