@@ -8,4 +8,4 @@ on:
 
 jobs:
   shared:
-    uses: juanmanuel-tirado/ci-workflows/.github/workflows/python-ci.yml@PAN-1889-python-version-matrix
+    uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@v1
