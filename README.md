@@ -58,7 +58,13 @@ poetry config virtualenvs.in-project true
 
 ### 2.2  Installation Steps
 
-#### Libraries
+#### From Pypi
+
+```bash
+$ pip install pantos-common
+```
+
+#### From source code
 
 Create the virtual environment and install the dependencies:
 
