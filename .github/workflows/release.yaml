@@ -29,7 +29,7 @@ jobs:
             echo "::error title=Invalid Release::Release must be tagged with a valid SemVer version"
             exit 1
           fi
-          echo "version=$(semver get version ${{ github.event.release.tag_name }})" >> $GITHUB_OUTPUT
+          echo "version=$(semver get release ${{ github.event.release.tag_name }})" >> $GITHUB_OUTPUT
 
   build:
     name: Build Package
