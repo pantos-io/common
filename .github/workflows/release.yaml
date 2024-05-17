@@ -62,7 +62,7 @@ jobs:
           path: dist
 
   publish-pypi:
-    name: Publish to Mainnet
+    name: Publish to PyPi
     needs: [define-environment, build]
     runs-on: ubuntu-latest
     environment:
@@ -82,7 +82,7 @@ jobs:
           name: common
           path: dist
 
-      - name: Publish package distributions to PyPI
+      - name: Publish package distributions to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           print-hash: true
