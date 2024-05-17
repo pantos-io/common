@@ -1,5 +1,19 @@
 PYTHON_FILES := pantos/common scripts tests
 
+.PHONY: check-version
+check-version:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is not set"; \
+		exit 1; \
+	fi
+	@VERSION_FROM_POETRY=$$(poetry version | awk '{print $$2}') ; \
+	if test "$$VERSION_FROM_POETRY" != "$(VERSION)"; then \
+		echo "Version mismatch: expected $(VERSION), got $$VERSION_FROM_POETRY" ; \
+		exit 1 ; \
+	else \
+		echo "Version check passed" ; \
+	fi
+
 .PHONY: wheel
 wheel:
 	poetry build -f wheel

@@ -10,16 +10,50 @@ concurrency:
   group: deploy-${{ github.repository }}-release-${{ github.event.release.prerelease }}
 
 jobs:
+  define-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-environment.outputs.version }}
+    steps:
+      - uses: step-security/harden-runner@v2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+
+      - name: Configure Environment
+        id: get-environment
+        run: |
+          wget -O /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
+          chmod +x /usr/local/bin/semver
+          if [[ $(semver validate ${{ github.event.release.tag_name }}) == "invalid" ]]; then
+            echo "::error title=Invalid Release::Release must be tagged with a valid SemVer version"
+            exit 1
+          fi
+          echo "version=$(semver get version ${{ github.event.release.tag_name }})" >> $GITHUB_OUTPUT
+
   build:
     name: Build Package
+    needs: define-environment
     runs-on: ubuntu-latest
     steps:
+      - uses: step-security/harden-runner@v2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+
       - uses: actions/checkout@v4
 
       - uses: pantos-io/ci-workflows/.github/actions/install-poetry@v1
 
       - name: Build package
-        run: make wheel
+        run: |
+          make check-version VERSION=${{ needs.define-environment.outputs.version }}
+          make wheel
+
+      - name: Freeze dependencies
+        run: |
+          poetry self add poetry-plugin-freeze
+          poetry freeze-wheel
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -29,14 +63,19 @@ jobs:
 
   publish-pypi:
     name: Publish to Mainnet
-    needs: [build]
+    needs: [define-environment, build]
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/pantos-common/${{ github.event.release.tag_name }}
+      url: https://pypi.org/p/pantos-common/${{ needs.define-environment.outputs.version }}
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
+      - uses: step-security/harden-runner@v2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
@@ -46,6 +85,7 @@ jobs:
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          print-hash: true
           repository-url: 'https://upload.pypi.org/legacy/'
 
   add-assets:
@@ -56,6 +96,11 @@ jobs:
       contents: write
       id-token: write
     steps:
+      - uses: step-security/harden-runner@v2
+        with:
+          disable-sudo: true
+          egress-policy: audit
+
       - uses: actions/download-artifact@v4
         with:
           name: common
