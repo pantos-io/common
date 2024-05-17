@@ -9,3 +9,4 @@ dist/
 find.sh
 local/
 .coverage
+requirements.txt
