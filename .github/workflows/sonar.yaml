@@ -1,12 +1,21 @@
 name: Sonar
 
+<<<<<<< HEAD
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
+=======
+workflow_run:
+  workflows: [CI]
+  types: [completed]
+>>>>>>> 9dcbffa (fix: pin test with python version matrix)
 
 jobs:
   shared:
     uses: pantos-io/ci-workflows/.github/workflows/sonar.yml@v1
+<<<<<<< HEAD
     secrets: inherit
 
+=======
+>>>>>>> 9dcbffa (fix: pin test with python version matrix)
