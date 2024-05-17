@@ -1,5 +1,5 @@
 name: Release Workflow
-run-name: ${{ (github.event.release.prerelease && 'Beta') || 'Prod'}} Release for ${{ github.repository }} - ${{ github.event.release.tag_name }}
+run-name: ${{ (github.event.release.prerelease && 'Pre-') || ''}}Release for ${{ github.repository }} - ${{ github.event.release.tag_name }}
 on:
   release:
     # Triggered on Pre-Releases and Releases
@@ -26,6 +26,27 @@ jobs:
         with:
           name: common
           path: dist
+
+  publish-pypi:
+    name: Publish to Mainnet
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pantos-common/${{ github.event.release.tag_name }}
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: common
+          path: dist
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: 'https://upload.pypi.org/legacy/'
 
   add-assets:
     name: Add Assets to the ${{ github.event.release.tag_name }} Release
