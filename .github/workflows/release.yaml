@@ -54,6 +54,20 @@ jobs:
         run: |
           poetry self add poetry-plugin-freeze
           poetry freeze-wheel
+          # Copy the file "METADATA" from the wheel to "PKG-INFO" in the sdist
+          # Unzip wheel and sdist
+          mkdir tmp
+          cp dist/*.whl tmp/wheel.zip
+          unzip tmp/wheel.zip -d tmp/wheel/
+          # Untar sdist
+          mkdir tmp/sdist
+          tar -xzf dist/*.tar.gz -C tmp/sdist/
+          # Copy the file
+          cp tmp/wheel/*.dist-info/METADATA tmp/sdist/*/PKG-INFO
+          # Tar the sdist again
+          tar -czf dist/$(ls dist | grep .tar.gz) -C tmp/sdist/ .
+          # Remove the temporary directories
+          rm -rf tmp
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
