@@ -14,9 +14,9 @@ check-version:
 		echo "Version check passed" ; \
 	fi
 
-.PHONY: wheel
+.PHONY: build
 wheel:
-	poetry build -f wheel
+	poetry build
 
 .PHONY: code
 code: check format lint sort bandit test
