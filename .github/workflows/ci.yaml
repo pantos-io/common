@@ -8,10 +8,5 @@ on:
 
 jobs:
   shared:
-<<<<<<< HEAD
     uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@v1
 
-=======
-    uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@8651148b739f73851ab50c671da422c94bc55095
-    secrets: inherit  
->>>>>>> 9dcbffa (fix: pin test with python version matrix)
