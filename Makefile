@@ -24,7 +24,6 @@ code: check format lint sort bandit test
 .PHONY: check
 check:
 	poetry run mypy --namespace-packages --explicit-package-bases ${PYTHON_FILES}
-	# poetry run mypy $(PYTHON_FILES)
 
 .PHONY: format
 format:
