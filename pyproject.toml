@@ -8,9 +8,13 @@ readme = "README.md"
 homepage = "https://pantos.io"
 repository = "https://github.com/pantos-io/common"
 packages = [
-    { include = "pantos" },
-    { include = "pantos-logo-full.svg" }
+    { include = "pantos" }
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pantos"]
+namespaces = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "7.4.0"
