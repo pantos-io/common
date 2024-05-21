@@ -15,7 +15,7 @@ check-version:
 	fi
 
 .PHONY: build
-wheel:
+build:
 	poetry build
 
 .PHONY: code
