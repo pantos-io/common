@@ -19,7 +19,7 @@ build:
 	poetry build
 
 .PHONY: code
-code: check format lint sort bandit test build
+code: check format lint sort bandit test
 
 .PHONY: check
 check:
