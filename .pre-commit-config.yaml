@@ -18,7 +18,8 @@ repos:
     hooks:
       - id: mypy
         files: ^pantos/common
-        additional_dependencies: ['types-requests', 'types-PyYAML']
+        args: ['--namespace-packages', '--explicit-package-bases' ]
+        additional_dependencies: ['types-requests', 'types-PyYAML', 'web3[tester]']
         stages: [ commit ]
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0

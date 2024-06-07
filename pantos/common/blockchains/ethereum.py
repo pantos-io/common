@@ -30,6 +30,10 @@ _TRANSACTION_METHOD_NAMES = [
 """The names of methods of the blockchain interactor object which
 send transactions."""
 
+_NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE = 'missing trie node'
+
+_NO_ARCHIVE_NODE_LOG_MESSAGE = 'due to the absence of an archive node'
+
 _logger = logging.getLogger(__name__)
 
 
@@ -428,19 +432,28 @@ class EthereumUtilities(BlockchainUtilities):
     def __retrieve_revert_message(
             self, transaction_hash: str,
             node_connections: NodeConnections[web3.Web3]) -> str:
-        required_keys = [
-            'from', 'to', 'gas', 'gasPrice', 'value', 'data', 'nonce',
-            'maxFeePerGas', 'maxPriorityFeePerGas', 'chainId'
-        ]
-        full_tx = node_connections.eth.get_transaction(
-            typing.cast(web3.types.HexStr, transaction_hash)).get()
-        block_number = full_tx['blockNumber']
-        replay_tx = {k: v for k, v in full_tx.items() if k in required_keys}
-        revert_message = ''
+        revert_message = 'unknown'
         try:
-            node_connections.eth.call(
-                typing.cast(web3.types.TxParams, replay_tx),
-                block_number).get()
-        except web3.exceptions.ContractLogicError as e:
-            revert_message = str(e)
+            full_tx = node_connections.eth.get_transaction(
+                typing.cast(web3.types.HexStr, transaction_hash)).get()
+            replay_tx = {
+                'from': full_tx['from'],
+                'to': full_tx['to'],
+                'value': full_tx['value'],
+                'data': full_tx['input']
+            }
+            context_block_number = full_tx['blockNumber'] - 1
+            try:
+                node_connections.eth.call(
+                    typing.cast(web3.types.TxParams, replay_tx),
+                    context_block_number).get()
+            except web3.exceptions.ContractLogicError as error:
+                revert_message = str(error)
+            except ValueError as error:
+                if _NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE in error.args[0].get(
+                        'message'):
+                    revert_message += f' {_NO_ARCHIVE_NODE_LOG_MESSAGE}'
+        except Exception:
+            _logger.warning('unable to retrieve the revert message',
+                            exc_info=True)
         return revert_message
