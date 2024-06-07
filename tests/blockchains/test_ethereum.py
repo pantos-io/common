@@ -11,6 +11,9 @@ from pantos.common.blockchains.base import ResultsNotMatchingError
 from pantos.common.blockchains.base import TransactionNonceTooLowError
 from pantos.common.blockchains.base import TransactionUnderpricedError
 from pantos.common.blockchains.enums import Blockchain
+from pantos.common.blockchains.ethereum import _NO_ARCHIVE_NODE_LOG_MESSAGE
+from pantos.common.blockchains.ethereum import \
+    _NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE
 from pantos.common.blockchains.ethereum import _TRANSACTION_METHOD_NAMES
 from pantos.common.blockchains.ethereum import EthereumUtilities
 from pantos.common.blockchains.ethereum import EthereumUtilitiesError
@@ -511,23 +514,79 @@ def test_create_single_node_connection_not_connected_error(
 
 
 def test_retrieve_revert_message_correct(ethereum_utilities, w3,
-                                         node_connections, transaction_id):
-    eth_utils = ethereum_utilities
-    with unittest.mock.patch.object(w3.eth, 'get_transaction',
-                                    return_value={'blockNumber': 1}):
+                                         node_connections, transaction_id,
+                                         transaction_contract_address):
+    default_account = w3.eth.accounts[0]
+    with unittest.mock.patch.object(
+            w3.eth, 'get_transaction', return_value={
+                'from': default_account,
+                'to': transaction_contract_address,
+                'value': 0,
+                'input': "",
+                'blockNumber': 1,
+            }):
         with unittest.mock.patch.object(
                 w3.eth, 'call', side_effect=web3.exceptions.ContractLogicError(
                     'revert message')):
-            assert eth_utils._EthereumUtilities__retrieve_revert_message(
-                transaction_id, node_connections) == 'revert message'
+            assert \
+                ethereum_utilities._EthereumUtilities__retrieve_revert_message(
+                    transaction_id, node_connections) == 'revert message'
 
 
-def test_retrieve_revert_message_correct_no_error(ethereum_utilities, w3,
-                                                  node_connections,
-                                                  transaction_id):
-    eth_utils = ethereum_utilities
-    with unittest.mock.patch.object(w3.eth, 'get_transaction',
-                                    return_value={'blockNumber': 1}):
+def test_retrieve_revert_message_no_archive_node_available_error(
+        ethereum_utilities, w3, node_connections, transaction_id,
+        transaction_contract_address):
+    default_account = w3.eth.accounts[0]
+    with unittest.mock.patch.object(
+            w3.eth, 'get_transaction', return_value={
+                'from': default_account,
+                'to': transaction_contract_address,
+                'value': 0,
+                'input': "",
+                'blockNumber': 1,
+            }):
+        with unittest.mock.patch.object(
+                w3.eth, 'call', side_effect=ValueError({
+                    'message': f'{_NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE} 0x...'
+                })):
+            assert \
+                ethereum_utilities._EthereumUtilities__retrieve_revert_message(
+                    transaction_id, node_connections) == \
+                f'unknown {_NO_ARCHIVE_NODE_LOG_MESSAGE}'
+
+
+def test_retrieve_revert_message_correct_no_error(
+        ethereum_utilities, w3, node_connections, transaction_id,
+        transaction_contract_address):
+    default_account = w3.eth.accounts[0]
+    with unittest.mock.patch.object(
+            w3.eth, 'get_transaction', return_value={
+                'from': default_account,
+                'to': transaction_contract_address,
+                'value': 0,
+                'input': "",
+                'blockNumber': 1,
+            }):
         with unittest.mock.patch.object(w3.eth, 'call', return_value=''):
-            assert eth_utils._EthereumUtilities__retrieve_revert_message(
-                transaction_id, node_connections) == ''
+            assert \
+                ethereum_utilities._EthereumUtilities__retrieve_revert_message(
+                    transaction_id, node_connections) == 'unknown'
+
+
+def test_retrieve_revert_message_correct_error(ethereum_utilities, w3,
+                                               node_connections,
+                                               transaction_id,
+                                               transaction_contract_address):
+    default_account = w3.eth.accounts[0]
+    with unittest.mock.patch.object(
+            w3.eth, 'get_transaction', return_value={
+                'from': default_account,
+                'to': transaction_contract_address,
+                'value': 0,
+                'input': "",
+                'blockNumber': 1,
+            }):
+        with unittest.mock.patch.object(w3.eth, 'call', side_effect=Exception):
+            assert \
+                ethereum_utilities._EthereumUtilities__retrieve_revert_message(
+                    transaction_id, node_connections) == 'unknown'
