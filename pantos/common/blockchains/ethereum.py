@@ -5,6 +5,7 @@ import logging
 import typing
 import urllib.parse
 
+import semantic_version  # type: ignore
 import web3
 import web3.contract.contract
 import web3.exceptions
@@ -15,6 +16,7 @@ from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import NodeConnections
 from pantos.common.blockchains.base import ResultsNotMatchingError
+from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.entities import TransactionStatus
@@ -75,7 +77,7 @@ class EthereumUtilities(BlockchainUtilities):
 
     def create_contract(
             self, contract_address: BlockchainAddress,
-            contract_abi: ContractAbi,
+            versioned_contract_abi: VersionedContractAbi,
             node_connections: typing.Optional[NodeConnections] = None) \
             -> NodeConnections.Wrapper[web3.contract.Contract]:
         """Create a contract instance.
@@ -84,8 +86,8 @@ class EthereumUtilities(BlockchainUtilities):
         ----------
         contract_address : BlockchainAddress
             The address of the contract.
-        contract_abi : ContractAbi
-            The contract ABI.
+        versioned_contract_abi : VersionedContractAbi
+            The version and the contract ABI to load.
         w3 : web3.Web3, optional
             The Web3 instance to use.
 
@@ -108,11 +110,13 @@ class EthereumUtilities(BlockchainUtilities):
             return node_connections.eth.contract(
                 address=typing.cast(web3.types.ChecksumAddress,
                                     contract_address),
-                abi=self.load_contract_abi(contract_abi))
+                abi=self.load_contract_abi(versioned_contract_abi))
         except Exception:
-            raise self._create_error('unable to create a contract instance',
-                                     contract_address=contract_address,
-                                     contract_abi=contract_abi)
+            raise self._create_error(
+                'unable to create a contract instance',
+                contract_address=contract_address,
+                contract_abi=versioned_contract_abi.contract_abi,
+                version=versioned_contract_abi.version)
 
     def get_address(self, private_key: str) -> str:
         # Docstring inherited
@@ -140,10 +144,12 @@ class EthereumUtilities(BlockchainUtilities):
             except Exception:
                 raise self._create_error('cannot determine balance')
         else:
+            versioned_contract_abi = VersionedContractAbi(
+                ContractAbi.STANDARD_TOKEN, semantic_version.Version('1.0.0'))
             if not self.is_valid_address(token_address):
                 raise self._create_error('invalid token address')
             erc20_contract = self.create_contract(
-                BlockchainAddress(token_address), ContractAbi.STANDARD_TOKEN,
+                BlockchainAddress(token_address), versioned_contract_abi,
                 node_connections)
             try:
                 return erc20_contract.functions.\
@@ -287,7 +293,7 @@ class EthereumUtilities(BlockchainUtilities):
             _logger.info('new transaction to be submitted',
                          extra=vars(request) | transaction_parameters)
             contract = self.create_contract(request.contract_address,
-                                            request.contract_abi,
+                                            request.versioned_contract_abi,
                                             node_connections)
             contract_function = contract.get_function_by_selector(
                 request.function_selector)
