@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/pantos-common/${{ needs.define-environment.outputs.version }}
+      url: https://pypi.org/project/pantos-common/${{ needs.define-environment.outputs.version }}
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:

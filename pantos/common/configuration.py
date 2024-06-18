@@ -175,6 +175,10 @@ class Config:
             pathlib.Path(path.as_posix() + '.env'),
             pathlib.Path(path.with_suffix('.env').as_posix())
         ]
+        if os.environ.get('PANTOS_ENV_FILE'):
+            _logger.info('loading env variables from environment defined file '
+                         'PANTOS_ENV_FILE')
+            env_files.insert(0, pathlib.Path(os.environ['PANTOS_ENV_FILE']))
         # Iterate over the potential .env file paths
         for env_file in env_files:
             if env_file.is_file():
