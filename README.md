@@ -76,6 +76,22 @@ $ poetry install --no-root
 
 The Pantos Common project should be used as a utility library, for example as a submodule in an upstream project. After those steps, the modules can be imported directly from the Common library.
 
-### 3.1 Examples
+### 3.1 Configuration
+
+The Pantos Common library allows its configuration to be loaded from multiple predefined folders. This normally involves an environment file and a base YAML configuration file, which can be located in the following predefined paths:
+
+```
+    $PWD
+    $HOME
+    ~/.config
+    /etc/pantos
+    /etc
+```
+
+Each service defines a default file name under which this file is searched. The service then expects the environment file to be present in the same location with the same name but with a different .env extension.
+
+Alternatively one can define the location of such files by using the `PANTOS_CONFIG` and `PANTOS_ENV_FILE` environment variables.
+
+### 3.2 Examples
 
 https://github.com/pantos-io/client-library/blob/main/pantos/client/library/blockchains/base.py
