@@ -18,6 +18,8 @@ import random
 import typing
 import uuid
 
+import semantic_version  # type: ignore
+
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.entities import TransactionStatus
@@ -26,7 +28,7 @@ from pantos.common.exceptions import ErrorCreator
 from pantos.common.types import BlockchainAddress
 from pantos.common.types import ContractFunctionArgs
 
-_CONTRACT_ABI_PACKAGE = 'pantos.common.blockchains.contracts'
+_BASE_CONTRACT_ABI_PACKAGE = 'pantos.common.blockchains.contracts'
 
 MIN_ADAPTABLE_FEE_INCREASE_FACTOR = 1.101
 """The minimum factor for increasing the adaptable fee per gas in
@@ -404,6 +406,23 @@ class BlockchainHandler(abc.ABC):
         return blockchain_handlers
 
 
+@dataclasses.dataclass
+class VersionedContractAbi:
+    """Class which encapsulates the ABI definition of a contract
+    with support for versioning.
+
+    Attributes
+    ----------
+    contract_abi : ContractAbi
+        Supported contract ABI.
+    version : semantic_version.Version
+        The semantic version of the contract ABI.
+
+    """
+    contract_abi: ContractAbi
+    version: semantic_version.Version
+
+
 class BlockchainUtilities(BlockchainHandler,
                           ErrorCreator[BlockchainUtilitiesError]):
     """Base class for all blockchain utilities classes.
@@ -657,15 +676,17 @@ class BlockchainUtilities(BlockchainHandler,
         """
         pass  # pragma: no cover
 
-    def load_contract_abi(self, contract_abi: ContractAbi) -> list[typing.Any]:
-        """Load a contract ABI as a list from a JSON file. If a contract
-        ABI has already been loaded before, a cached version is
-        returned.
+    def load_contract_abi(
+            self,
+            versioned_contract_abi: VersionedContractAbi) -> list[typing.Any]:
+        """Load a contract ABI, according to its version, as a list
+        from a JSON file. If a contract ABI has already been loaded
+        before, a cached version is returned.
 
         Parameters
         ----------
-        contract_abi : ContractAbi
-            The contract ABI to load.
+        versioned_contract_abi : VersionedContractAbi
+            The version and the contract ABI to load.
 
         Returns
         -------
@@ -673,20 +694,26 @@ class BlockchainUtilities(BlockchainHandler,
             The loaded contract ABI.
 
         """
+        contract_abi = versioned_contract_abi.contract_abi
+        version = versioned_contract_abi.version
         if contract_abi in self.__loaded_contract_abis:
             return self.__loaded_contract_abis[contract_abi]
         contract_abi_file_name = contract_abi.get_file_name(
             self.get_blockchain())
+        versioned_contract_abi_package = (
+            f'{_BASE_CONTRACT_ABI_PACKAGE}.v'
+            f'{version.major}_{version.minor}_{version.patch}')
         try:
             with importlib.resources.open_text(
-                    _CONTRACT_ABI_PACKAGE,
+                    versioned_contract_abi_package,
                     contract_abi_file_name) as contract_abi_file:
                 loaded_contract_abi = json.load(contract_abi_file)
             self.__loaded_contract_abis[contract_abi] = loaded_contract_abi
             return loaded_contract_abi
         except Exception:
             raise self._create_error('unable to load a contract ABI',
-                                     contract_abi=contract_abi)
+                                     contract_abi=contract_abi,
+                                     version=version)
 
     @abc.abstractmethod
     def decrypt_private_key(self, encrypted_key: str, password: str) -> str:
@@ -751,9 +778,9 @@ class BlockchainUtilities(BlockchainHandler,
         contract_address : BlockchainAddress
             The address of the contract to invoke a function on in the
             transaction.
-        contract_abi : ContractAbi
-            The ABI of the contract to invoke a function on in the
-            transaction.
+        versioned_contract_abi : VersionedContractAbi
+            The version and the ABI of the contract to invoke a function
+            on in the transaction.
         function_selector : str
             The selector of the contract function to be invoked in the
             transaction.
@@ -785,7 +812,7 @@ class BlockchainUtilities(BlockchainHandler,
 
         """
         contract_address: BlockchainAddress
-        contract_abi: ContractAbi
+        versioned_contract_abi: VersionedContractAbi
         function_selector: str
         function_args: ContractFunctionArgs
         gas: typing.Optional[int]
@@ -805,7 +832,10 @@ class BlockchainUtilities(BlockchainHandler,
 
             """
             request_dict = dataclasses.asdict(self)
-            request_dict['contract_abi'] = self.contract_abi.value
+            request_dict['versioned_contract_abi']['contract_abi'] = \
+                self.versioned_contract_abi.contract_abi.value
+            request_dict['versioned_contract_abi']['version'] = \
+                str(self.versioned_contract_abi.version)
             return request_dict
 
         @classmethod
@@ -825,8 +855,11 @@ class BlockchainUtilities(BlockchainHandler,
 
             """
             request_dict = copy.deepcopy(request_dict)
-            request_dict['contract_abi'] = ContractAbi(
-                request_dict['contract_abi'])
+            request_dict['versioned_contract_abi'] = VersionedContractAbi(
+                ContractAbi(
+                    request_dict['versioned_contract_abi']['contract_abi']),
+                semantic_version.Version(
+                    request_dict['versioned_contract_abi']['version']))
             return cls(**request_dict)
 
     @dataclasses.dataclass

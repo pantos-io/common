@@ -14,16 +14,16 @@ check-version:
 		echo "Version check passed" ; \
 	fi
 
-.PHONY: wheel
-wheel:
-	poetry build -f wheel
+.PHONY: build
+build:
+	poetry build
 
 .PHONY: code
 code: check format lint sort bandit test
 
 .PHONY: check
 check:
-	poetry run mypy $(PYTHON_FILES)
+	poetry run mypy --namespace-packages --explicit-package-bases ${PYTHON_FILES}
 
 .PHONY: format
 format:

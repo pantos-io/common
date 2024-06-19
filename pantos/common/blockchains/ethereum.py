@@ -5,6 +5,7 @@ import logging
 import typing
 import urllib.parse
 
+import semantic_version  # type: ignore
 import web3
 import web3.contract.contract
 import web3.exceptions
@@ -15,6 +16,7 @@ from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import NodeConnections
 from pantos.common.blockchains.base import ResultsNotMatchingError
+from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.entities import TransactionStatus
@@ -29,6 +31,10 @@ _TRANSACTION_METHOD_NAMES = [
 ]
 """The names of methods of the blockchain interactor object which
 send transactions."""
+
+_NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE = 'missing trie node'
+
+_NO_ARCHIVE_NODE_LOG_MESSAGE = 'due to the absence of an archive node'
 
 _logger = logging.getLogger(__name__)
 
@@ -71,7 +77,7 @@ class EthereumUtilities(BlockchainUtilities):
 
     def create_contract(
             self, contract_address: BlockchainAddress,
-            contract_abi: ContractAbi,
+            versioned_contract_abi: VersionedContractAbi,
             node_connections: typing.Optional[NodeConnections] = None) \
             -> NodeConnections.Wrapper[web3.contract.Contract]:
         """Create a contract instance.
@@ -80,8 +86,8 @@ class EthereumUtilities(BlockchainUtilities):
         ----------
         contract_address : BlockchainAddress
             The address of the contract.
-        contract_abi : ContractAbi
-            The contract ABI.
+        versioned_contract_abi : VersionedContractAbi
+            The version and the contract ABI to load.
         w3 : web3.Web3, optional
             The Web3 instance to use.
 
@@ -104,11 +110,13 @@ class EthereumUtilities(BlockchainUtilities):
             return node_connections.eth.contract(
                 address=typing.cast(web3.types.ChecksumAddress,
                                     contract_address),
-                abi=self.load_contract_abi(contract_abi))
+                abi=self.load_contract_abi(versioned_contract_abi))
         except Exception:
-            raise self._create_error('unable to create a contract instance',
-                                     contract_address=contract_address,
-                                     contract_abi=contract_abi)
+            raise self._create_error(
+                'unable to create a contract instance',
+                contract_address=contract_address,
+                contract_abi=versioned_contract_abi.contract_abi,
+                version=versioned_contract_abi.version)
 
     def get_address(self, private_key: str) -> str:
         # Docstring inherited
@@ -136,10 +144,12 @@ class EthereumUtilities(BlockchainUtilities):
             except Exception:
                 raise self._create_error('cannot determine balance')
         else:
+            versioned_contract_abi = VersionedContractAbi(
+                ContractAbi.STANDARD_TOKEN, semantic_version.Version('1.0.0'))
             if not self.is_valid_address(token_address):
                 raise self._create_error('invalid token address')
             erc20_contract = self.create_contract(
-                BlockchainAddress(token_address), ContractAbi.STANDARD_TOKEN,
+                BlockchainAddress(token_address), versioned_contract_abi,
                 node_connections)
             try:
                 return erc20_contract.functions.\
@@ -283,7 +293,7 @@ class EthereumUtilities(BlockchainUtilities):
             _logger.info('new transaction to be submitted',
                          extra=vars(request) | transaction_parameters)
             contract = self.create_contract(request.contract_address,
-                                            request.contract_abi,
+                                            request.versioned_contract_abi,
                                             node_connections)
             contract_function = contract.get_function_by_selector(
                 request.function_selector)
@@ -428,19 +438,28 @@ class EthereumUtilities(BlockchainUtilities):
     def __retrieve_revert_message(
             self, transaction_hash: str,
             node_connections: NodeConnections[web3.Web3]) -> str:
-        required_keys = [
-            'from', 'to', 'gas', 'gasPrice', 'value', 'data', 'nonce',
-            'maxFeePerGas', 'maxPriorityFeePerGas', 'chainId'
-        ]
-        full_tx = node_connections.eth.get_transaction(
-            typing.cast(web3.types.HexStr, transaction_hash)).get()
-        block_number = full_tx['blockNumber']
-        replay_tx = {k: v for k, v in full_tx.items() if k in required_keys}
-        revert_message = ''
+        revert_message = 'unknown'
         try:
-            node_connections.eth.call(
-                typing.cast(web3.types.TxParams, replay_tx),
-                block_number).get()
-        except web3.exceptions.ContractLogicError as e:
-            revert_message = str(e)
+            full_tx = node_connections.eth.get_transaction(
+                typing.cast(web3.types.HexStr, transaction_hash)).get()
+            replay_tx = {
+                'from': full_tx['from'],
+                'to': full_tx['to'],
+                'value': full_tx['value'],
+                'data': full_tx['input']
+            }
+            context_block_number = full_tx['blockNumber'] - 1
+            try:
+                node_connections.eth.call(
+                    typing.cast(web3.types.TxParams, replay_tx),
+                    context_block_number).get()
+            except web3.exceptions.ContractLogicError as error:
+                revert_message = str(error)
+            except ValueError as error:
+                if _NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE in error.args[0].get(
+                        'message'):
+                    revert_message += f' {_NO_ARCHIVE_NODE_LOG_MESSAGE}'
+        except Exception:
+            _logger.warning('unable to retrieve the revert message',
+                            exc_info=True)
         return revert_message
