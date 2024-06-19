@@ -7,7 +7,7 @@ import uuid
 
 import pytest
 
-from pantos.common.blockchains.base import _CONTRACT_ABI_PACKAGE
+from pantos.common.blockchains.base import _BASE_CONTRACT_ABI_PACKAGE
 from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import MaxTotalFeePerGasExceededError
@@ -16,6 +16,7 @@ from pantos.common.blockchains.base import NodeConnections
 from pantos.common.blockchains.base import ResultsNotMatchingError
 from pantos.common.blockchains.base import SingleNodeConnectionError
 from pantos.common.blockchains.base import TransactionUnderpricedError
+from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.entities import TransactionStatus
 
@@ -187,18 +188,24 @@ def test_create_node_connection_no_node_connection_valid(
 
 
 @unittest.mock.patch.object(ContractAbi, 'get_file_name')
-def test_load_contract_abi_correct(mock_get_file_name, blockchain_utilities):
+def test_load_contract_abi_correct(mock_get_file_name, blockchain_utilities,
+                                   contracts_abi_version):
     abi_file_name = f'{uuid.uuid4()}.abi'
     mock_get_file_name.return_value = abi_file_name
-    module = importlib.import_module(_CONTRACT_ABI_PACKAGE)
+    module_to_import = (
+        f'{_BASE_CONTRACT_ABI_PACKAGE}.v{contracts_abi_version.major}_'
+        f'{contracts_abi_version.minor}_{contracts_abi_version.patch}')
+    module = importlib.import_module(module_to_import)
     abi_file_path = pathlib.Path(module.__file__).parent / abi_file_name
     contract_abi = list(ContractAbi)[0]
+    versioned_contract_abi = VersionedContractAbi(contract_abi,
+                                                  contracts_abi_version)
     contract_abi_list = json.loads(_CONTRACT_ABI)
     try:
         with abi_file_path.open('w') as abi_file:
             abi_file.write(_CONTRACT_ABI)
         loaded_contract_abi_list = blockchain_utilities.load_contract_abi(
-            contract_abi)
+            versioned_contract_abi)
     finally:
         abi_file_path.unlink()
     assert loaded_contract_abi_list == contract_abi_list
@@ -206,7 +213,7 @@ def test_load_contract_abi_correct(mock_get_file_name, blockchain_utilities):
     # invoked again (loading the ABI again from the file would fail
     # since the file has already been deleted)
     loaded_contract_abi_list = blockchain_utilities.load_contract_abi(
-        contract_abi)
+        versioned_contract_abi)
     assert loaded_contract_abi_list == contract_abi_list
 
 
@@ -215,9 +222,11 @@ def test_load_contract_abi_correct(mock_get_file_name, blockchain_utilities):
 @unittest.mock.patch.object(BlockchainUtilities, 'get_error_class',
                             return_value=BlockchainUtilitiesError)
 def test_load_contract_abi_error(mock_get_error_class, mock_get_file_name,
-                                 blockchain_utilities):
+                                 blockchain_utilities, contracts_abi_version):
+    versioned_contract_abi = VersionedContractAbi(
+        list(ContractAbi)[0], contracts_abi_version)
     with pytest.raises(BlockchainUtilitiesError):
-        blockchain_utilities.load_contract_abi(list(ContractAbi)[0])
+        blockchain_utilities.load_contract_abi(versioned_contract_abi)
 
 
 @pytest.mark.parametrize('underpriced_submissions', [0, 1, 10])
