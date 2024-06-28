@@ -117,6 +117,7 @@ def test_parse_file_error(mock_open, mock_parse_config, mock_load_dotenv,
     mock_parse_config.return_value = {'key': 'value'}
 
     config = Config('config.yaml')
-    with pytest.raises(ConfigError):
-        config._Config__parse_file(
-            pathlib.Path('config.yaml'))  # Accessing private function
+    result = config._Config__parse_file(
+        pathlib.Path('config.yaml'))  # Accessing private function
+
+    assert result == {'key': 'value'}

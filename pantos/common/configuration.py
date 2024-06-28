@@ -157,10 +157,15 @@ class Config:
         # Find the configuration file at common locations
         for path in _CONFIGURATION_PATHS:
             config_path = path
-            if config_path.is_dir():
-                config_path = config_path / self.default_file_name
-            if config_path.is_file():
-                return config_path
+            try:
+                if config_path.is_dir():
+                    config_path = config_path / self.default_file_name
+                if config_path.is_file():
+                    return config_path
+            except OSError:
+                # Perhaps the path is not readable
+                _logger.warning(f'error while reading: {config_path}',
+                                exc_info=True)
         # Package resource
         if importlib.resources.is_resource('pantos', self.default_file_name):
             with importlib.resources.path('pantos',
@@ -179,15 +184,26 @@ class Config:
             _logger.info('loading env variables from environment defined file '
                          'PANTOS_ENV_FILE')
             env_files.insert(0, pathlib.Path(os.environ['PANTOS_ENV_FILE']))
+
+        # Extend env_files with .env paths from _CONFIGURATION_PATHS
+        env_files.extend(
+            pathlib.Path(str(p)).with_name(
+                str(p.name) + self.default_file_name + '.env')
+            for p in _CONFIGURATION_PATHS)
         # Iterate over the potential .env file paths
         for env_file in env_files:
-            if env_file.is_file():
-                try:
+            try:
+                if env_file.is_file():
                     dotenv.load_dotenv(env_file)
                     _logger.info(f'loaded .env from file {env_file}')
                     break
-                except Exception:
-                    raise ConfigError(f'unable to load .env file {env_file}')
+            except OSError:
+                # Perhaps the path is not readable
+                _logger.warning(f'error while reading: {env_file}',
+                                exc_info=True)
+            except Exception:
+                _logger.error(f'unable to load .env file {env_file}',
+                              exc_info=True)
         # Parse the YAML code in the configuration file
         try:
             return pyaml_env.parse_config(path.as_posix(), default_value='')
