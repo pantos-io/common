@@ -166,7 +166,6 @@ class Config:
                 # Perhaps the path is not readable
                 _logger.warning(f'error while reading: {config_path}',
                                 exc_info=True)
-                pass
         # Package resource
         if importlib.resources.is_resource('pantos', self.default_file_name):
             with importlib.resources.path('pantos',
@@ -202,11 +201,9 @@ class Config:
                 # Perhaps the path is not readable
                 _logger.warning(f'error while reading: {env_file}',
                                 exc_info=True)
-                pass
             except Exception:
                 _logger.error(f'unable to load .env file {env_file}',
                               exc_info=True)
-                pass
         # Parse the YAML code in the configuration file
         try:
             return pyaml_env.parse_config(path.as_posix(), default_value='')
