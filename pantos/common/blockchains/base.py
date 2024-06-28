@@ -35,6 +35,8 @@ MIN_ADAPTABLE_FEE_INCREASE_FACTOR = 1.101
 transaction resubmissions.
 """
 
+GENERAL_RPC_ERROR_MESSAGE = 'unreachable'
+
 H = typing.TypeVar('H', bound='BlockchainHandler')
 T = typing.TypeVar('T',
                    bound='BlockchainUtilities.TransactionSubmissionRequest')
@@ -423,6 +425,22 @@ class VersionedContractAbi:
     version: semantic_version.Version
 
 
+@dataclasses.dataclass
+class UnhealthyNode:
+    """Entity which encapsulates information about an unhealthy node.
+
+    Attributes
+    ----------
+    node_domain : str
+        The domain of the node's URL.
+    status : str
+        The status of the node.
+
+    """
+    node_domain: str
+    status: str
+
+
 class BlockchainUtilities(BlockchainHandler,
                           ErrorCreator[BlockchainUtilitiesError]):
     """Base class for all blockchain utilities classes.
@@ -661,6 +679,28 @@ class BlockchainUtilities(BlockchainHandler,
 
         """
         pass  # pragma: no cover
+
+    @abc.abstractmethod
+    def get_unhealthy_nodes(
+            self, blockchain_nodes: list[str],
+            timeout: float | tuple | None = None) -> list[UnhealthyNode]:
+        """Determine the health of the blockchain nodes.
+
+        Parameters
+        ----------
+        blockchain_nodes : list of str
+            The URLs of the blockchain nodes to check.
+        timeout : float, tuple or None
+            How long to wait for the server to send data before giving up,
+            as a float, or a (connect timeout, read timeout) tuple.
+
+        Returns
+        -------
+        list[UnhealthyNode]
+            The list of unhealthy nodes.
+
+        """
+        pass
 
     @abc.abstractmethod
     def _get_transaction_method_names(self) -> list[str]:
@@ -1150,9 +1190,7 @@ class BlockchainUtilities(BlockchainHandler,
     @abc.abstractmethod
     def _create_single_node_connection(
             self, blockchain_node_url: str,
-            timeout: typing.Optional[typing.Union[float,
-                                                  tuple]] = None) \
-            -> typing.Any:
+            timeout: float | tuple | None = None) -> typing.Any:
         """Create a single blockchain-specific node connection
         with the given URL.
 
@@ -1160,7 +1198,7 @@ class BlockchainUtilities(BlockchainHandler,
         ----------
         blockchain_node_url : str
             The blockchain node URL.
-        timeout : float or tuple
+        timeout : float, tuple or None
             How long to wait for the server to send data before giving up,
             as a float, or a (connect timeout, read timeout) tuple.
 

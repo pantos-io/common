@@ -12,10 +12,13 @@ import web3.exceptions
 import web3.middleware
 import web3.types
 
+from pantos.common.blockchains.base import GENERAL_RPC_ERROR_MESSAGE
 from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import NodeConnections
 from pantos.common.blockchains.base import ResultsNotMatchingError
+from pantos.common.blockchains.base import SingleNodeConnectionError
+from pantos.common.blockchains.base import UnhealthyNode
 from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.enums import ContractAbi
@@ -226,6 +229,21 @@ class EthereumUtilities(BlockchainUtilities):
         # Docstring inherited
         return address_one.lower() == address_two.lower()
 
+    def get_unhealthy_nodes(
+            self, blockchain_nodes: list[str],
+            timeout: float | tuple | None = None) -> list[UnhealthyNode]:
+        # Docstring inherited
+        unhealthy_nodes = []
+        for blockchain_node in blockchain_nodes:
+            try:
+                self._create_single_node_connection(blockchain_node, timeout)
+            except SingleNodeConnectionError:
+                unhealthy_nodes.append(
+                    UnhealthyNode(
+                        urllib.parse.urlparse(blockchain_node).netloc,
+                        GENERAL_RPC_ERROR_MESSAGE))
+        return unhealthy_nodes
+
     def _get_transaction_method_names(self) -> list[str]:
         # Docstring inherited
         return _TRANSACTION_METHOD_NAMES
@@ -316,9 +334,7 @@ class EthereumUtilities(BlockchainUtilities):
 
     def _create_single_node_connection(
             self, blockchain_node_url: str,
-            timeout: typing.Optional[typing.Union[float,
-                                                  tuple]] = None) \
-            -> typing.Any:
+            timeout: float | tuple | None = None) -> typing.Any:
         # Docstring inherited
         request_kwargs = {'timeout': timeout}
         try:
