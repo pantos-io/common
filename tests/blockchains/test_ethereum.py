@@ -6,10 +6,13 @@ import pytest
 import web3
 import web3.exceptions
 
+from pantos.common.blockchains.base import GENERAL_RPC_ERROR_MESSAGE
 from pantos.common.blockchains.base import NodeConnections
 from pantos.common.blockchains.base import ResultsNotMatchingError
+from pantos.common.blockchains.base import SingleNodeConnectionError
 from pantos.common.blockchains.base import TransactionNonceTooLowError
 from pantos.common.blockchains.base import TransactionUnderpricedError
+from pantos.common.blockchains.base import UnhealthyNode
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.ethereum import _NO_ARCHIVE_NODE_LOG_MESSAGE
 from pantos.common.blockchains.ethereum import \
@@ -220,6 +223,41 @@ def test_is_equal_address(ethereum_utilities):
         is True
     assert ethereum_utilities.is_equal_address(address.lower(),
                                                address.lower()) is True
+
+
+@unittest.mock.patch.object(EthereumUtilities,
+                            '_create_single_node_connection')
+def test_get_unhealthy_nodes_with_unreachable_nodes_correct(
+        mocked_create_single_node_connection, ethereum_utilities):
+    mocked_create_single_node_connection.side_effect = \
+        SingleNodeConnectionError
+    blockchain_nodes = [
+        'http://node1.example.com', 'http://node2.example.com',
+        'http://node3.example.com'
+    ]
+    expected_unhealthy_nodes = [
+        UnhealthyNode('node1.example.com', GENERAL_RPC_ERROR_MESSAGE),
+        UnhealthyNode('node2.example.com', GENERAL_RPC_ERROR_MESSAGE),
+        UnhealthyNode('node3.example.com', GENERAL_RPC_ERROR_MESSAGE)
+    ]
+
+    unhealthy_nodes = ethereum_utilities.get_unhealthy_nodes(blockchain_nodes)
+
+    assert unhealthy_nodes == expected_unhealthy_nodes
+
+
+@unittest.mock.patch.object(EthereumUtilities,
+                            '_create_single_node_connection')
+def test_get_unhealthy_nodes_with_reachable_nodes_correct(
+        mocked_create_single_node_connection, ethereum_utilities):
+    blockchain_nodes = [
+        'http://reachable1.example.com', 'http://reachable2.example.com',
+        'http://reachable3.example.com'
+    ]
+
+    unhealthy_nodes = ethereum_utilities.get_unhealthy_nodes(blockchain_nodes)
+
+    assert unhealthy_nodes == []
 
 
 def test_decrypt_private_encrypted_key(ethereum_utilities, account):

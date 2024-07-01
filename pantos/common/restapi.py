@@ -1,10 +1,14 @@
 """Common REST API resources.
 
 """
+import dataclasses
 import json
 
-import flask
+import flask  # type: ignore
 import flask_restful  # type: ignore
+
+from pantos.common.exceptions import NotInitializedError
+from pantos.common.health import check_blockchain_nodes_health
 
 
 class Live(flask_restful.Resource):
@@ -17,6 +21,28 @@ class Live(flask_restful.Resource):
 
         """
         return None  # pragma: no cover
+
+
+class NodesHealthResource(flask_restful.Resource):
+    """RESTful resource for the health status of the blockchain nodes.
+
+    """
+    def get(self):
+        """Return the health status of the blockchain nodes.
+
+        """
+        try:
+            nodes_health = check_blockchain_nodes_health()
+            return ok_response({
+                blockchain.name.capitalize(): dataclasses.asdict(
+                    nodes_health[blockchain])
+                for blockchain in nodes_health
+            })
+        except NotInitializedError:
+            return internal_server_error(
+                'no blockchain nodes have been initialized yet')
+        except Exception:
+            return internal_server_error()
 
 
 def ok_response(data: list | dict) -> flask.Response:

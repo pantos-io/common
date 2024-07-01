@@ -6,6 +6,7 @@ import typing
 from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import NodeConnections
+from pantos.common.blockchains.base import UnhealthyNode
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.entities import TransactionStatus
 
@@ -63,7 +64,13 @@ class SolanaUtilities(BlockchainUtilities):
 
     def is_equal_address(self, address_one: str, address_two: str) -> bool:
         # Docstring inherited
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
+
+    def get_unhealthy_nodes(
+            self, blockchain_nodes: list[str],
+            timeout: float | tuple | None = None) -> list[UnhealthyNode]:
+        # Docstring inherited
+        raise NotImplementedError  # pragma: no cover
 
     def _get_transaction_method_names(self) -> list[str]:
         # Docstring inherited
