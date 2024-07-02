@@ -19,12 +19,14 @@ _logger = logging.getLogger(__name__)
 
 # Ordered by priority
 _CONFIGURATION_PATHS = [
-    pathlib.Path.cwd(),
     pathlib.Path.home(),
     pathlib.Path.home() / '.config',
     pathlib.Path('/etc/pantos'),
     pathlib.Path('/etc')
 ]
+
+if pathlib.Path.cwd() != pathlib.Path('/'):
+    _CONFIGURATION_PATHS.insert(0, pathlib.Path.cwd())
 
 if os.environ.get('PANTOS_CONFIG'):
     _logger.info('loading configuration from environment variable '
