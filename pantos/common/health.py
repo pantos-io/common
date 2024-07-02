@@ -8,7 +8,8 @@ from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.factory import get_blockchain_utilities
 from pantos.common.exceptions import NotInitializedError
 
-_blockchain_nodes: dict[Blockchain, tuple[list[str], float | tuple]] = {}
+_blockchain_nodes: dict[Blockchain, tuple[list[str],
+                                          float | tuple | None]] = {}
 
 
 @dataclasses.dataclass
@@ -63,7 +64,8 @@ def check_blockchain_nodes_health() -> dict[Blockchain, NodesHealth]:
 
 def initialize_blockchain_nodes(
     blockchain_nodes: dict[Blockchain, tuple[list[str],
-                                             float | tuple]]) -> None:
+                                             float | tuple | None]]) \
+        -> None:
     """Initialize the blockchain nodes.
 
     Parameters
