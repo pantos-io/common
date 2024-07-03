@@ -1,6 +1,7 @@
 """Module for analyzing the health of the system.
 
 """
+import concurrent.futures
 import dataclasses
 
 from pantos.common.blockchains.base import UnhealthyNode
@@ -50,15 +51,21 @@ def check_blockchain_nodes_health() -> dict[Blockchain, NodesHealth]:
         raise NotInitializedError(
             'the blockchain nodes have not been initialized yet')
     nodes_health = {}
-    for blockchain in _blockchain_nodes:
-        blockchain_utilities = get_blockchain_utilities(blockchain)
-        blockchain_nodes = _blockchain_nodes[blockchain][0]
-        timeout = _blockchain_nodes[blockchain][1]
-        unhealthy_nodes = blockchain_utilities.get_unhealthy_nodes(
-            blockchain_nodes, timeout)
-        nodes_health[blockchain] = NodesHealth(
-            len(blockchain_nodes) - len(unhealthy_nodes), len(unhealthy_nodes),
-            unhealthy_nodes)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_blockchain = {
+            executor.submit(
+                get_blockchain_utilities(blockchain).get_unhealthy_nodes,  # noqa
+                _blockchain_nodes[blockchain][0],
+                _blockchain_nodes[blockchain][1]): blockchain
+            for blockchain in _blockchain_nodes
+        }
+        for future in concurrent.futures.as_completed(future_to_blockchain):
+            blockchain = future_to_blockchain[future]
+            unhealthy_nodes = future.result()
+            nodes_health[blockchain] = NodesHealth(
+                len(_blockchain_nodes[blockchain][0]) - len(unhealthy_nodes),
+                len(unhealthy_nodes), unhealthy_nodes)
     return nodes_health
 
 
