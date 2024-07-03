@@ -3,12 +3,16 @@
 """
 import dataclasses
 import json
+import logging
 
 import flask  # type: ignore
 import flask_restful  # type: ignore
 
 from pantos.common.exceptions import NotInitializedError
 from pantos.common.health import check_blockchain_nodes_health
+
+_logger = logging.getLogger(__name__)
+"""Logger for this module."""
 
 
 class Live(flask_restful.Resource):
@@ -32,6 +36,7 @@ class NodesHealthResource(flask_restful.Resource):
 
         """
         try:
+            _logger.info('checking blockchain nodes health')
             nodes_health = check_blockchain_nodes_health()
             return ok_response({
                 blockchain.name.capitalize(): dataclasses.asdict(
@@ -39,9 +44,12 @@ class NodesHealthResource(flask_restful.Resource):
                 for blockchain in nodes_health
             })
         except NotInitializedError:
+            _logger.warning('no blockchain nodes have been initialized yet')
             return internal_server_error(
                 'no blockchain nodes have been initialized yet')
         except Exception:
+            _logger.critical('cannot check blockchain nodes health',
+                             exc_info=True)
             return internal_server_error()
 
 

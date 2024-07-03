@@ -16,6 +16,7 @@ import pathlib
 import pkgutil
 import random
 import typing
+import urllib.parse
 import uuid
 
 import semantic_version  # type: ignore
@@ -583,9 +584,13 @@ class BlockchainUtilities(BlockchainHandler,
                 return valid_node_connection
             except SingleNodeConnectionError:
                 continue
+        blockchain_node_domains = [
+            urllib.parse.urlparse(blockchain_node_url).netloc
+            for blockchain_node_url in blockchain_node_urls
+        ]
         raise self._create_error(
-            'cannot connect to any of the blockchain nodes with the URIs '
-            f'"{blockchain_node_urls}"')
+            'cannot connect to any of the blockchain nodes with the domains '
+            f'"{blockchain_node_domains}"')
 
     @abc.abstractmethod
     def get_address(self, private_key: str) -> str:
