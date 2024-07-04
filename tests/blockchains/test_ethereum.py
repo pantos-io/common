@@ -349,7 +349,7 @@ def test_submit_transaction_correct(mock_create_contract,
             with unittest.mock.patch.object(
                     w3.eth,
                     'send_raw_transaction') as mock_send_raw_transaction:
-                mock_send_raw_transaction().hex.return_value = \
+                mock_send_raw_transaction().to_0x_hex.return_value = \
                     transaction_id
                 response = ethereum_utilities.submit_transaction(
                     transaction_submission_request)
