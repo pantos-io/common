@@ -124,7 +124,9 @@ class EthereumUtilities(BlockchainUtilities):
     def get_address(self, private_key: str) -> str:
         # Docstring inherited
         try:
-            return web3.Account.from_key(private_key).address
+            address = web3.Account.from_key(private_key).address
+            assert address.startswith('0x')
+            return address
         except Exception:
             raise self._create_error(
                 'cannot determine the address from a private key')
@@ -254,9 +256,8 @@ class EthereumUtilities(BlockchainUtilities):
             private_key = web3.Account.decrypt(encrypted_key, password).hex()
         except Exception:
             raise self._create_error('cannot load the private key')
-        # Return the private key hex string without the leading 0x
-        assert private_key.startswith('0x')
-        return private_key[2:]
+        assert not private_key.startswith('0x')
+        return private_key
 
     def read_transaction_status(
             self, transaction_id: str,
@@ -271,8 +272,8 @@ class EthereumUtilities(BlockchainUtilities):
                         typing.cast(web3.types.HexStr, transaction_id)).get()
             except web3.exceptions.TransactionNotFound:
                 return TransactionStatus.UNINCLUDED
-            assert (
-                transaction_receipt['transactionHash'].hex() == transaction_id)
+            assert (transaction_receipt['transactionHash'].to_0x_hex() ==
+                    transaction_id)
             transaction_block_number = transaction_receipt['blockNumber']
             if transaction_block_number is None:
                 return TransactionStatus.UNINCLUDED
@@ -435,7 +436,7 @@ class EthereumUtilities(BlockchainUtilities):
             return typing.cast(
                 str,
                 node_connections.eth.send_raw_transaction(
-                    raw_transaction).hex())
+                    raw_transaction).to_0x_hex())
         except ValueError as error:
             if any(error_message in str(error)
                    for error_message in _NONCE_TOO_LOW):
