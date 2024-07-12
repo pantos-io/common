@@ -322,7 +322,7 @@ class EthereumUtilities(BlockchainUtilities):
             signed_transaction = web3.Account.sign_transaction(
                 transaction, private_key=self._default_private_key)
             transaction_hash = self.__send_raw_transaction(
-                signed_transaction.rawTransaction, node_connections)
+                signed_transaction.raw_transaction, node_connections)
             return BlockchainUtilities.TransactionSubmissionResponse(
                 transaction_hash, adaptable_fee_per_gas)
         except EthereumUtilitiesError:
