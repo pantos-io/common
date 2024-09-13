@@ -189,17 +189,17 @@ def test_create_node_connection_no_node_connection_valid(
 
 @unittest.mock.patch.object(ContractAbi, 'get_file_name')
 def test_load_contract_abi_correct(mock_get_file_name, blockchain_utilities,
-                                   contracts_abi_version):
+                                   protocol_version):
     abi_file_name = f'{uuid.uuid4()}.abi'
     mock_get_file_name.return_value = abi_file_name
     module_to_import = (
-        f'{_BASE_CONTRACT_ABI_PACKAGE}.v{contracts_abi_version.major}_'
-        f'{contracts_abi_version.minor}_{contracts_abi_version.patch}')
+        f'{_BASE_CONTRACT_ABI_PACKAGE}.v{protocol_version.major}_'
+        f'{protocol_version.minor}_{protocol_version.patch}')
     module = importlib.import_module(module_to_import)
     abi_file_path = pathlib.Path(module.__file__).parent / abi_file_name
     contract_abi = list(ContractAbi)[0]
     versioned_contract_abi = VersionedContractAbi(contract_abi,
-                                                  contracts_abi_version)
+                                                  protocol_version)
     contract_abi_list = json.loads(_CONTRACT_ABI)
     try:
         with abi_file_path.open('w') as abi_file:
@@ -222,9 +222,9 @@ def test_load_contract_abi_correct(mock_get_file_name, blockchain_utilities,
 @unittest.mock.patch.object(BlockchainUtilities, 'get_error_class',
                             return_value=BlockchainUtilitiesError)
 def test_load_contract_abi_error(mock_get_error_class, mock_get_file_name,
-                                 blockchain_utilities, contracts_abi_version):
+                                 blockchain_utilities, protocol_version):
     versioned_contract_abi = VersionedContractAbi(
-        list(ContractAbi)[0], contracts_abi_version)
+        list(ContractAbi)[0], protocol_version)
     with pytest.raises(BlockchainUtilitiesError):
         blockchain_utilities.load_contract_abi(versioned_contract_abi)
 
