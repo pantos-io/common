@@ -5,7 +5,6 @@ import logging
 import typing
 import urllib.parse
 
-import semantic_version  # type: ignore
 import web3
 import web3.contract.contract
 import web3.exceptions
@@ -23,6 +22,7 @@ from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.entities import TransactionStatus
+from pantos.common.protocol import get_latest_protocol_version
 from pantos.common.types import BlockchainAddress
 
 _NONCE_TOO_LOW = ['nonce too low', 'invalid nonce', 'ERR_INCORRECT_NONCE']
@@ -150,7 +150,7 @@ class EthereumUtilities(BlockchainUtilities):
                 raise self._create_error('cannot determine balance')
         else:
             versioned_contract_abi = VersionedContractAbi(
-                ContractAbi.STANDARD_TOKEN, semantic_version.Version('1.0.0'))
+                ContractAbi.STANDARD_TOKEN, get_latest_protocol_version())
             if not self.is_valid_address(token_address):
                 raise self._create_error('invalid token address')
             erc20_contract = self.create_contract(

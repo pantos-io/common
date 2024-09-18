@@ -63,7 +63,7 @@ _TRANSACTION_ID = \
 
 _TRANSACTION_ADAPTABLE_FEE_PER_GAS = int(1.1e8)
 
-_CONTRACTS_ABI_VERSION = semantic_version.Version('1.0.0')
+_PROTOCOL_VERSION = semantic_version.Version('0.1.0')
 
 
 @dataclasses.dataclass
@@ -179,13 +179,13 @@ def transaction_adaptable_fee_per_gas():
 
 
 @pytest.fixture(scope='package')
-def contracts_abi_version():
-    return _CONTRACTS_ABI_VERSION
+def protocol_version():
+    return _PROTOCOL_VERSION
 
 
 @pytest.fixture(scope='package', params=ContractAbi)
-def transaction_versioned_contract_abi(request, contracts_abi_version):
-    return VersionedContractAbi(request.param, contracts_abi_version)
+def transaction_versioned_contract_abi(request, protocol_version):
+    return VersionedContractAbi(request.param, protocol_version)
 
 
 @pytest.fixture

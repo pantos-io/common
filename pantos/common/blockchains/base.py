@@ -419,7 +419,7 @@ class VersionedContractAbi:
     contract_abi : ContractAbi
         Supported contract ABI.
     version : semantic_version.Version
-        The semantic version of the contract ABI.
+        The version of the Pantos protocol.
 
     """
     contract_abi: ContractAbi
