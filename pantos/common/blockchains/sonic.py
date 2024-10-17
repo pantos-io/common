@@ -1,6 +1,9 @@
-"""Module for Fantom-specific utilities and errors. Since Fantom is
+"""Module for Sonic-specific utilities and errors. Since Sonic is
 Ethereum-compatible, the utilities implementation inherits from the
 pantos.common.blockchains.ethereum module.
+
+Note that Pantos used to support Sonic's predecessor Fantom. This module
+was renamed accordingly on 2024-10-17.
 
 """
 from pantos.common.blockchains.base import BlockchainUtilitiesError
@@ -9,23 +12,23 @@ from pantos.common.blockchains.ethereum import EthereumUtilities
 from pantos.common.blockchains.ethereum import EthereumUtilitiesError
 
 
-class FantomUtilitiesError(EthereumUtilitiesError):
-    """Exception class for all Fantom utilities errors.
+class SonicUtilitiesError(EthereumUtilitiesError):
+    """Exception class for all Sonic utilities errors.
 
     """
     pass
 
 
-class FantomUtilities(EthereumUtilities):
-    """Class for Fantom-specific utilities.
+class SonicUtilities(EthereumUtilities):
+    """Class for Sonic-specific utilities.
 
     """
     @classmethod
     def get_blockchain(cls) -> Blockchain:
         # Docstring inherited
-        return Blockchain.FANTOM
+        return Blockchain.SONIC
 
     @classmethod
     def get_error_class(cls) -> type[BlockchainUtilitiesError]:
         # Docstring inherited
-        return FantomUtilitiesError
+        return SonicUtilitiesError
