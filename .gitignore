@@ -6,8 +6,6 @@
 .vscode/
 build/
 dist/
-find.sh
-local/
+/local/
 .coverage
-requirements.txt
 tmp

@@ -12,9 +12,9 @@ from pantos.common.blockchains.ethereum import EthereumUtilities
 from pantos.common.blockchains.factory import _blockchain_utilities
 from pantos.common.blockchains.factory import get_blockchain_utilities
 from pantos.common.blockchains.factory import initialize_blockchain_utilities
-from pantos.common.blockchains.fantom import FantomUtilities
 from pantos.common.blockchains.polygon import PolygonUtilities
 from pantos.common.blockchains.solana import SolanaUtilities
+from pantos.common.blockchains.sonic import SonicUtilities
 from pantos.common.exceptions import NotInitializedError
 
 
@@ -60,8 +60,8 @@ def _get_blockchain_utilities_class(blockchain):
         return CronosUtilities
     if blockchain is Blockchain.ETHEREUM:
         return EthereumUtilities
-    if blockchain is Blockchain.FANTOM:
-        return FantomUtilities
+    if blockchain is Blockchain.SONIC:
+        return SonicUtilities
     if blockchain is Blockchain.POLYGON:
         return PolygonUtilities
     if blockchain is Blockchain.SOLANA:
