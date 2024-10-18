@@ -8,7 +8,6 @@ import logging
 import logging.handlers
 import pathlib
 import sys
-import traceback
 import typing
 
 import json_log_formatter  # type: ignore
@@ -120,17 +119,9 @@ class _DataDogJSONFormatter(json_log_formatter.VerboseJSONFormatter):
         extra['levelname'] = record.levelname
         if 'time' not in extra:
             extra['time'] = datetime.datetime.utcnow()
-
+        extra['message'] = message
         if record.exc_info:
-            exc_type = record.exc_info[0]
-            exc_value = record.exc_info[1]
-            human_readable_error = traceback.format_exception_only(
-                exc_type, exc_value)[-1].rstrip()
-            extra['message'] = f'{message} - {human_readable_error}'
             extra['exc_info'] = self.formatException(record.exc_info)
-        else:
-            extra['message'] = message
-
         return extra
 
 

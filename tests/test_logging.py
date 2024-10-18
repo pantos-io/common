@@ -104,8 +104,7 @@ def test_datadog_custom_formatter_format_error_correct(
     assert json_formatted_log[_LOG_EXTRA_KEY_2] == _LOG_EXTRA_VALUE_2
     assert json_formatted_log[
         _LOG_EXTRA_KEY_3] == _LOG_EXTRA_VALUE_3.name.capitalize()
-    assert json_formatted_log[
-        'message'] == f'{_LOG_MESSAGE} - ValueError: {_LOG_ERROR_MESSAGE}'
+    assert json_formatted_log['message'] == _LOG_MESSAGE
 
 
 @pytest.mark.parametrize('logger', [
