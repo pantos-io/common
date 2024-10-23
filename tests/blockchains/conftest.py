@@ -5,7 +5,6 @@ import tempfile
 import uuid
 
 import pytest
-import semantic_version  # type: ignore
 
 from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import VersionedContractAbi
@@ -33,6 +32,8 @@ _AVERAGE_BLOCK_TIME = 14
 _BLOCKCHAIN_NODE_URL = 'https://some.url'
 
 _FALLBACK_BLOCKCHAIN_NODE_URL = 'https://some2.url'
+
+_INACTIVE_BLOCKCHAINS = [Blockchain.SOLANA]
 
 _REQUIRED_TRANSACTION_CONFIRMATIONS = 20
 
@@ -63,8 +64,6 @@ _TRANSACTION_ID = \
 
 _TRANSACTION_ADAPTABLE_FEE_PER_GAS = int(1.1e8)
 
-_PROTOCOL_VERSION = semantic_version.Version('0.1.0')
-
 
 @dataclasses.dataclass
 class Account:
@@ -89,6 +88,15 @@ def account():
 
 @pytest.fixture(scope='package', params=Blockchain)
 def blockchain(request):
+    return request.param
+
+
+@pytest.fixture(
+    scope='package', params=[
+        blockchain for blockchain in Blockchain
+        if blockchain not in _INACTIVE_BLOCKCHAINS
+    ])
+def active_blockchain(request):
     return request.param
 
 
@@ -178,26 +186,21 @@ def transaction_adaptable_fee_per_gas():
     return _TRANSACTION_ADAPTABLE_FEE_PER_GAS
 
 
-@pytest.fixture(scope='package')
-def protocol_version():
-    return _PROTOCOL_VERSION
-
-
 @pytest.fixture(scope='package', params=ContractAbi)
-def transaction_versioned_contract_abi(request, protocol_version):
+def versioned_contract_abi(request, protocol_version):
     return VersionedContractAbi(request.param, protocol_version)
 
 
 @pytest.fixture
 def transaction_submission_request(transaction_contract_address,
-                                   transaction_versioned_contract_abi,
+                                   versioned_contract_abi,
                                    transaction_function_selector,
                                    transaction_function_args, transaction_gas,
                                    transaction_min_adaptable_fee_per_gas,
                                    transaction_max_total_fee_per_gas,
                                    transaction_amount, transaction_nonce):
     return BlockchainUtilities.TransactionSubmissionRequest(
-        transaction_contract_address, transaction_versioned_contract_abi,
+        transaction_contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
@@ -213,13 +216,13 @@ def transaction_submission_response(transaction_id,
 
 @pytest.fixture
 def transaction_resubmission_request(
-        transaction_contract_address, transaction_versioned_contract_abi,
+        transaction_contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
         transaction_nonce, transaction_adaptable_fee_increase_factor):
     return BlockchainUtilities.TransactionResubmissionRequest(
-        transaction_contract_address, transaction_versioned_contract_abi,
+        transaction_contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
@@ -240,14 +243,14 @@ def transaction_resubmission_response(transaction_id,
 
 @pytest.fixture
 def transaction_submission_start_request(
-        transaction_contract_address, transaction_versioned_contract_abi,
+        transaction_contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
         transaction_nonce, transaction_adaptable_fee_increase_factor,
         transaction_blocks_until_resubmission):
     return BlockchainUtilities.TransactionSubmissionStartRequest(
-        transaction_contract_address, transaction_versioned_contract_abi,
+        transaction_contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
