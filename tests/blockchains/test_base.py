@@ -229,6 +229,16 @@ def test_load_contract_abi_error(mock_get_error_class, mock_get_file_name,
         blockchain_utilities.load_contract_abi(versioned_contract_abi)
 
 
+def test_load_contract_abi_file_existence(blockchain_utilities,
+                                          active_blockchain,
+                                          versioned_contract_abi):
+    with unittest.mock.patch.object(blockchain_utilities, 'get_blockchain',
+                                    return_value=active_blockchain):
+        contract_abi = blockchain_utilities.load_contract_abi(
+            versioned_contract_abi)
+    assert len(contract_abi) > 0
+
+
 @pytest.mark.parametrize('underpriced_submissions', [0, 1, 10])
 @pytest.mark.parametrize('min_adaptable_fee_per_gas', [0, int(1e6), int(1e9)])
 @unittest.mock.patch.object(BlockchainUtilities, 'submit_transaction')
