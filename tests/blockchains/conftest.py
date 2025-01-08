@@ -39,7 +39,7 @@ _REQUIRED_TRANSACTION_CONFIRMATIONS = 20
 
 _TRANSACTION_NETWORK_ID = 1
 
-_TRANSACTION_CONTRACT_ADDRESS = '0xB685E5B2b9fB7a3EbD196f4C0eb8B8AB6d589a12'
+_CONTRACT_ADDRESS = '0xB685E5B2b9fB7a3EbD196f4C0eb8B8AB6d589a12'
 
 _TRANSACTION_FUNCTION_SELECTOR = '0xa9059c1b'
 
@@ -126,8 +126,8 @@ def transaction_network_id():
 
 
 @pytest.fixture(scope='package')
-def transaction_contract_address():
-    return _TRANSACTION_CONTRACT_ADDRESS
+def contract_address():
+    return _CONTRACT_ADDRESS
 
 
 @pytest.fixture(scope='package')
@@ -192,15 +192,14 @@ def versioned_contract_abi(request, protocol_version):
 
 
 @pytest.fixture
-def transaction_submission_request(transaction_contract_address,
-                                   versioned_contract_abi,
+def transaction_submission_request(contract_address, versioned_contract_abi,
                                    transaction_function_selector,
                                    transaction_function_args, transaction_gas,
                                    transaction_min_adaptable_fee_per_gas,
                                    transaction_max_total_fee_per_gas,
                                    transaction_amount, transaction_nonce):
     return BlockchainUtilities.TransactionSubmissionRequest(
-        transaction_contract_address, versioned_contract_abi,
+        contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
@@ -216,13 +215,13 @@ def transaction_submission_response(transaction_id,
 
 @pytest.fixture
 def transaction_resubmission_request(
-        transaction_contract_address, versioned_contract_abi,
+        contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
         transaction_nonce, transaction_adaptable_fee_increase_factor):
     return BlockchainUtilities.TransactionResubmissionRequest(
-        transaction_contract_address, versioned_contract_abi,
+        contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
@@ -243,14 +242,14 @@ def transaction_resubmission_response(transaction_id,
 
 @pytest.fixture
 def transaction_submission_start_request(
-        transaction_contract_address, versioned_contract_abi,
+        contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,
         transaction_nonce, transaction_adaptable_fee_increase_factor,
         transaction_blocks_until_resubmission):
     return BlockchainUtilities.TransactionSubmissionStartRequest(
-        transaction_contract_address, versioned_contract_abi,
+        contract_address, versioned_contract_abi,
         transaction_function_selector, transaction_function_args,
         transaction_gas, transaction_min_adaptable_fee_per_gas,
         transaction_max_total_fee_per_gas, transaction_amount,

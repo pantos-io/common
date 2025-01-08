@@ -5,6 +5,7 @@ import logging
 import typing
 import urllib.parse
 
+import semantic_version  # type: ignore
 import web3
 import web3.contract.contract
 import web3.exceptions
@@ -23,6 +24,7 @@ from pantos.common.blockchains.enums import Blockchain
 from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.entities import TransactionStatus
 from pantos.common.protocol import get_latest_protocol_version
+from pantos.common.protocol import is_supported_protocol_version
 from pantos.common.types import BlockchainAddress
 
 _NONCE_TOO_LOW = ['nonce too low', 'invalid nonce', 'ERR_INCORRECT_NONCE']
@@ -230,6 +232,48 @@ class EthereumUtilities(BlockchainUtilities):
     def is_equal_address(self, address_one: str, address_two: str) -> bool:
         # Docstring inherited
         return address_one.lower() == address_two.lower()
+
+    def is_protocol_version_supported_by_contract(
+            self, contract_address: BlockchainAddress,
+            versioned_contract_abi: VersionedContractAbi,
+            node_connections: NodeConnections | None = None) -> bool:
+        # Docstring inherited
+        assert is_supported_protocol_version(versioned_contract_abi.version)
+        try:
+            contract = self.create_contract(contract_address,
+                                            versioned_contract_abi,
+                                            node_connections)
+            match versioned_contract_abi.contract_abi:
+                case ContractAbi.PANTOS_HUB:
+                    if (versioned_contract_abi.version
+                            < semantic_version.Version('0.2.0')):
+                        raise self._create_error(
+                            'contract function not available',
+                            versioned_contract_abi=versioned_contract_abi)
+                    protocol_version = \
+                        contract.caller().getProtocolVersion().get()
+                    assert isinstance(protocol_version, bytes)
+                    protocol_version_str = protocol_version.decode(
+                        'utf-8').rstrip('\x00')
+                    return (semantic_version.Version(protocol_version_str) ==
+                            versioned_contract_abi.version)
+                case ContractAbi.PANTOS_FORWARDER:
+                    major_protocol_version = \
+                        contract.caller().getMajorProtocolVersion().get()
+                    assert isinstance(major_protocol_version, int)
+                    return (major_protocol_version ==
+                            versioned_contract_abi.version.major)
+                case _:
+                    raise self._create_error(
+                        'contract not tied to specific protocol version',
+                        versioned_contract_abi=versioned_contract_abi)
+        except (EthereumUtilitiesError, ResultsNotMatchingError):
+            raise
+        except Exception:
+            raise self._create_error(
+                'unable to check if protocol version is supported by contract',
+                contract_address=contract_address,
+                versioned_contract_abi=versioned_contract_abi)
 
     def get_unhealthy_nodes(
             self, blockchain_nodes: list[str],
