@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.1.0
+
+January 8th 2025
+* [PAN-2030] Protocol version of contracts by @markuslevonyak in https://github.com/pantos-io/common/pull/55
+
 ## 2.1.2
 
 July 12th 2024
