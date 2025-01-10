@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.2.0
+
+January 10th 2025
+* feat: add new ABIs with improved events by @danut13 in https://github.com/pantos-io/common/pull/59
+
 ## 4.1.0
 
 January 8th 2025
