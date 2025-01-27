@@ -7,6 +7,7 @@ import logging
 
 import flask  # type: ignore
 import flask_restful  # type: ignore
+import marshmallow
 
 from pantos.common.exceptions import NotInitializedError
 from pantos.common.health import check_blockchain_nodes_health
@@ -15,14 +16,54 @@ _logger = logging.getLogger(__name__)
 """Logger for this module."""
 
 
+class _UnhealthyNodeSchema(marshmallow.Schema):
+    node_domain = marshmallow.fields.String(
+        required=True, description="The domain of the unhealthy node")
+    status = marshmallow.fields.String(
+        required=True, description="The status of the unhealthy node")
+
+
+class _BlockchainStatusSchema(marshmallow.Schema):
+    healthy_total = marshmallow.fields.Int(
+        required=True, description="The total number of healthy nodes")
+    unhealthy_total = marshmallow.fields.Int(
+        required=True, description="The total number of unhealthy nodes")
+    unhealthy_nodes = marshmallow.fields.List(
+        marshmallow.fields.Nested(_UnhealthyNodeSchema), required=True,
+        description="A list of unhealthy nodes")
+
+
+def create_blockchain_health_response_schema(blockchain_names: list):
+    """Dynamically create a schema with blockchain names as top-level keys."""
+    fields_dict = {
+        name: marshmallow.fields.Nested(_BlockchainStatusSchema,
+                                        required=False)
+        for name in blockchain_names
+    }
+
+    return type(
+        "_BlockchainHealthResponseSchema",
+        (marshmallow.Schema, ),
+        fields_dict,
+    )
+
+
 class Live(flask_restful.Resource):
     """Flask resource class which specifies the health/live REST endpoint.
 
     """
     def get(self):
-        """Return null response with status 200 if the service is up
-        and running.
-
+        """
+        Endpoint that verify the liveness of the service.
+        ---
+        tags:
+            - Health
+            - Live
+        responses:
+            200:
+                description: The service is up and running.
+            default:
+                description: Unexpected error.
         """
         return None  # pragma: no cover
 
@@ -32,8 +73,31 @@ class NodesHealthResource(flask_restful.Resource):
 
     """
     def get(self):
-        """Return the health status of the blockchain nodes.
-
+        """
+        Endpoint that returns an Json object with the health status of the
+        blockchain nodes used by the service.
+        ---
+        tags:
+            - Health
+            - NodesHealth
+        responses:
+            200:
+                description: Health status of blockchain nodes used by the
+                    service.
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/_BlockchainHealthResponse'
+            500:
+                description: Either internal error or blockchains nodes have
+                    not been initialized yet.
+                content:
+                    application/json:
+                        type: string
+                        items:
+                            type: string
+                        example: {'message': 'no blockchain nodes have been \
+                            initialized yet'}
         """
         try:
             _logger.info('checking blockchain nodes health')
@@ -51,6 +115,15 @@ class NodesHealthResource(flask_restful.Resource):
             _logger.critical('cannot check blockchain nodes health',
                              exc_info=True)
             return internal_server_error()
+
+
+class _400ErrorSchema(marshmallow.Schema):
+    """Validation schema for 4XX error messages.
+
+    """
+    message = marshmallow.fields.Dict(keys=marshmallow.fields.Str(),
+                                      values=marshmallow.fields.Str(),
+                                      required=True)
 
 
 def ok_response(data: list | dict) -> flask.Response:

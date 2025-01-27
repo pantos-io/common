@@ -48,6 +48,7 @@ pycryptodome = "3.20.0"
 hexbytes = "1.2.1"
 semantic-version = "2.10.0"
 eth-account = "0.13.0"
+marshmallow = "^3.23.1"
 
 [build-system]
 requires = ["poetry-core"]
