@@ -3,6 +3,7 @@ import unittest.mock
 
 import hexbytes
 import pytest
+import semantic_version  # type: ignore
 import web3
 import web3.exceptions
 
@@ -13,7 +14,9 @@ from pantos.common.blockchains.base import SingleNodeConnectionError
 from pantos.common.blockchains.base import TransactionNonceTooLowError
 from pantos.common.blockchains.base import TransactionUnderpricedError
 from pantos.common.blockchains.base import UnhealthyNode
+from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import Blockchain
+from pantos.common.blockchains.enums import ContractAbi
 from pantos.common.blockchains.ethereum import _NO_ARCHIVE_NODE_LOG_MESSAGE
 from pantos.common.blockchains.ethereum import \
     _NO_ARCHIVE_NODE_RPC_ERROR_MESSAGE
@@ -21,6 +24,8 @@ from pantos.common.blockchains.ethereum import _TRANSACTION_METHOD_NAMES
 from pantos.common.blockchains.ethereum import EthereumUtilities
 from pantos.common.blockchains.ethereum import EthereumUtilitiesError
 from pantos.common.entities import TransactionStatus
+from pantos.common.protocol import get_latest_protocol_version
+from pantos.common.protocol import get_supported_protocol_versions
 
 _CONTRACT_ABI_PACKAGE = 'tests.blockchains.contracts'
 """Package that contains the contract ABI files."""
@@ -223,6 +228,93 @@ def test_is_equal_address(ethereum_utilities):
         is True
     assert ethereum_utilities.is_equal_address(address.lower(),
                                                address.lower()) is True
+
+
+@pytest.mark.parametrize('supported_by_contract', [True, False])
+@unittest.mock.patch.object(EthereumUtilities, 'create_contract')
+def test_is_protocol_version_supported_by_contract_correct(
+        mock_create_contract, supported_by_contract, ethereum_utilities,
+        contract_address, versioned_contract_abi):
+    if versioned_contract_abi.contract_abi not in [
+            ContractAbi.PANTOS_HUB, ContractAbi.PANTOS_FORWARDER
+    ]:
+        pytest.skip('contract not tied to specific protocol version')
+    if (versioned_contract_abi.contract_abi is ContractAbi.PANTOS_HUB
+            and versioned_contract_abi.version
+            < semantic_version.Version('0.2.0')):
+        pytest.skip('contract function not available')
+
+    protocol_version = (versioned_contract_abi.version if supported_by_contract
+                        else semantic_version.Version('999.999.999'))
+    contract_caller = mock_create_contract().caller()
+    contract_caller.getMajorProtocolVersion().get.return_value = \
+        protocol_version.major
+    contract_caller.getProtocolVersion().get.return_value = str(
+        protocol_version).encode() + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+    result = ethereum_utilities.is_protocol_version_supported_by_contract(
+        contract_address, versioned_contract_abi)
+
+    assert result is supported_by_contract
+
+
+@unittest.mock.patch.object(EthereumUtilities, 'create_contract',
+                            side_effect=ResultsNotMatchingError)
+def test_is_protocol_version_supported_by_contract_results_not_matching_error(
+        mock_create_contract, ethereum_utilities, contract_address):
+    versioned_contract_abi = VersionedContractAbi(
+        ContractAbi.PANTOS_HUB, get_latest_protocol_version())
+
+    with pytest.raises(ResultsNotMatchingError):
+        ethereum_utilities.is_protocol_version_supported_by_contract(
+            contract_address, versioned_contract_abi)
+
+
+@unittest.mock.patch.object(EthereumUtilities, 'create_contract')
+def test_is_protocol_version_supported_by_contract_not_available_error(
+        mock_create_contract, ethereum_utilities, contract_address):
+    versioned_contract_abi = VersionedContractAbi(
+        ContractAbi.PANTOS_HUB, min(get_supported_protocol_versions()))
+
+    with pytest.raises(EthereumUtilitiesError) as exception_info:
+        ethereum_utilities.is_protocol_version_supported_by_contract(
+            contract_address, versioned_contract_abi)
+
+    assert 'contract function not available' in str(exception_info.value)
+    assert (exception_info.value.details['versioned_contract_abi'] ==
+            versioned_contract_abi)
+
+
+@unittest.mock.patch.object(EthereumUtilities, 'create_contract')
+def test_is_protocol_version_supported_by_contract_not_tied_error(
+        mock_create_contract, ethereum_utilities, contract_address):
+    versioned_contract_abi = VersionedContractAbi(
+        ContractAbi.PANTOS_TOKEN, get_latest_protocol_version())
+
+    with pytest.raises(EthereumUtilitiesError) as exception_info:
+        ethereum_utilities.is_protocol_version_supported_by_contract(
+            contract_address, versioned_contract_abi)
+
+    assert ('contract not tied to specific protocol version'
+            in str(exception_info.value))
+    assert (exception_info.value.details['versioned_contract_abi'] ==
+            versioned_contract_abi)
+
+
+@unittest.mock.patch.object(EthereumUtilities, 'create_contract',
+                            side_effect=Exception)
+def test_is_protocol_version_supported_by_contract_other_error(
+        mock_create_contract, ethereum_utilities, contract_address):
+    versioned_contract_abi = VersionedContractAbi(
+        ContractAbi.PANTOS_HUB, get_latest_protocol_version())
+
+    with pytest.raises(EthereumUtilitiesError) as exception_info:
+        ethereum_utilities.is_protocol_version_supported_by_contract(
+            contract_address, versioned_contract_abi)
+
+    assert exception_info.value.details['contract_address'] == contract_address
+    assert (exception_info.value.details['versioned_contract_abi'] ==
+            versioned_contract_abi)
 
 
 @unittest.mock.patch.object(EthereumUtilities,
@@ -553,12 +645,12 @@ def test_create_single_node_connection_not_connected_error(
 
 def test_retrieve_revert_message_correct(ethereum_utilities, w3,
                                          node_connections, transaction_id,
-                                         transaction_contract_address):
+                                         contract_address):
     default_account = w3.eth.accounts[0]
     with unittest.mock.patch.object(
             w3.eth, 'get_transaction', return_value={
                 'from': default_account,
-                'to': transaction_contract_address,
+                'to': contract_address,
                 'value': 0,
                 'input': "",
                 'blockNumber': 1,
@@ -573,12 +665,12 @@ def test_retrieve_revert_message_correct(ethereum_utilities, w3,
 
 def test_retrieve_revert_message_no_archive_node_available_error(
         ethereum_utilities, w3, node_connections, transaction_id,
-        transaction_contract_address):
+        contract_address):
     default_account = w3.eth.accounts[0]
     with unittest.mock.patch.object(
             w3.eth, 'get_transaction', return_value={
                 'from': default_account,
-                'to': transaction_contract_address,
+                'to': contract_address,
                 'value': 0,
                 'input': "",
                 'blockNumber': 1,
@@ -593,14 +685,15 @@ def test_retrieve_revert_message_no_archive_node_available_error(
                 f'unknown {_NO_ARCHIVE_NODE_LOG_MESSAGE}'
 
 
-def test_retrieve_revert_message_correct_no_error(
-        ethereum_utilities, w3, node_connections, transaction_id,
-        transaction_contract_address):
+def test_retrieve_revert_message_correct_no_error(ethereum_utilities, w3,
+                                                  node_connections,
+                                                  transaction_id,
+                                                  contract_address):
     default_account = w3.eth.accounts[0]
     with unittest.mock.patch.object(
             w3.eth, 'get_transaction', return_value={
                 'from': default_account,
-                'to': transaction_contract_address,
+                'to': contract_address,
                 'value': 0,
                 'input': "",
                 'blockNumber': 1,
@@ -614,12 +707,12 @@ def test_retrieve_revert_message_correct_no_error(
 def test_retrieve_revert_message_correct_error(ethereum_utilities, w3,
                                                node_connections,
                                                transaction_id,
-                                               transaction_contract_address):
+                                               contract_address):
     default_account = w3.eth.accounts[0]
     with unittest.mock.patch.object(
             w3.eth, 'get_transaction', return_value={
                 'from': default_account,
-                'to': transaction_contract_address,
+                'to': contract_address,
                 'value': 0,
                 'input': "",
                 'blockNumber': 1,

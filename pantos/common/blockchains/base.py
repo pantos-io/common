@@ -686,6 +686,31 @@ class BlockchainUtilities(BlockchainHandler,
         pass  # pragma: no cover
 
     @abc.abstractmethod
+    def is_protocol_version_supported_by_contract(
+            self, contract_address: BlockchainAddress,
+            versioned_contract_abi: VersionedContractAbi,
+            node_connections: NodeConnections | None = None) -> bool:
+        """Determine if a given protocol version is supported by a given
+        contract.
+
+        Parameters
+        ----------
+        contract_address : BlockchainAddress
+            The address of the contract.
+        versioned_contract_abi : VersionedContractAbi
+            The contract's ABI and expected protocol version.
+        node_connections : NodeConnections, optional
+            The blockchain node connections to be used.
+
+        Returns
+        -------
+        bool
+            True if the contract supports the protocol version.
+
+        """
+        pass  # pragma: no cover
+
+    @abc.abstractmethod
     def get_unhealthy_nodes(
             self, blockchain_nodes: list[str],
             timeout: float | tuple | None = None) -> list[UnhealthyNode]:
