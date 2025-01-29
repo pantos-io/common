@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pantos-common"
-version = "5.0.0"
+version = "5.1.0"
 description = "Common code for Pantos off-chain components."
 authors = ["Pantos GmbH <contact@pantos.io>"]
 license = "GPL-3.0-only"
@@ -48,7 +48,7 @@ pycryptodome = "3.20.0"
 hexbytes = "1.2.1"
 semantic-version = "2.10.0"
 eth-account = "0.13.0"
-marshmallow = "^3.23.1"
+marshmallow = "^3.26.0"
 
 [build-system]
 requires = ["poetry-core"]
