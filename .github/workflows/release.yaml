@@ -96,9 +96,14 @@ jobs:
           name: common
           path: dist
 
+      - name: Remove all non wheel files
+        run: |
+          find dist -type f -not -name "*.whl" -delete
+
       - name: Publish package distributions to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          verbose: true
           print-hash: true
           repository-url: 'https://upload.pypi.org/legacy/'
 
@@ -125,53 +130,7 @@ jobs:
           mkdir -p release
           cp dist/*.whl release/
 
-      - uses: sigstore/gh-action-sigstore-python@v2.1.1
+      - uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: release/*
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: signed-common
-          path: release/*.whl
-
-      - name: Upload release assets
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: "./release/*"
-          file_glob: true
-          overwrite: true
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.event.release.tag_name }}
-      
-      - uses: robinraju/release-downloader@v1.9
-        name: Download tarball
-        with:
-          tag: ${{ github.event.release.tag_name }}
-          tarBall: true
-          zipBall: true
-          fileName: '*'
-          out-file-path: external-release
-          preRelease: ${{ github.event.release.prerelease }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-
-      - name: List directory
-        run: |
-          ls -lha external-release
-          # Remove all the files in external-release that are also present in release
-          for file in $(ls release); do
-            rm -f external-release/$file
-          done
-
-      - uses: sigstore/gh-action-sigstore-python@v2.1.1
-        with:
-          inputs: external-release/*
-
-      - name: Upload signed source code
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "./external-release/*"
-          artifactErrorsFailBuild: true
-          allowUpdates: true
-          tag: ${{ github.event.release.tag_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          release-signing-artifacts: true

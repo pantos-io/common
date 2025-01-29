@@ -7,8 +7,10 @@ from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import NodeConnections
 from pantos.common.blockchains.base import UnhealthyNode
+from pantos.common.blockchains.base import VersionedContractAbi
 from pantos.common.blockchains.enums import Blockchain
 from pantos.common.entities import TransactionStatus
+from pantos.common.types import BlockchainAddress
 
 
 class SolanaUtilitiesError(BlockchainUtilitiesError):
@@ -63,6 +65,13 @@ class SolanaUtilities(BlockchainUtilities):
         raise NotImplementedError  # pragma: no cover
 
     def is_equal_address(self, address_one: str, address_two: str) -> bool:
+        # Docstring inherited
+        raise NotImplementedError  # pragma: no cover
+
+    def is_protocol_version_supported_by_contract(
+            self, contract_address: BlockchainAddress,
+            versioned_contract_abi: VersionedContractAbi,
+            node_connections: NodeConnections | None = None) -> bool:
         # Docstring inherited
         raise NotImplementedError  # pragma: no cover
 
