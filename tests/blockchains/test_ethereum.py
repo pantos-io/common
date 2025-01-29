@@ -64,12 +64,14 @@ def ethereum_utilities(mock_create_node_connections, blockchain_node_urls,
 @pytest.fixture
 def deployed_erc20(w3, node_connections):
     default_account = w3.eth.accounts[0]
-    with importlib.resources.open_text(
-            _CONTRACT_ABI_PACKAGE, _ERC20_CONTRACT_BYTECODE) as bytecode_file:
-        bytecode = bytecode_file.read()
-    with importlib.resources.open_text(_CONTRACT_ABI_PACKAGE,
-                                       _ERC20_CONTRACT_ABI) as abi_file:
-        erc20_abi = abi_file.read()
+    bytecode_file = importlib.resources.files(
+        _CONTRACT_ABI_PACKAGE) / _ERC20_CONTRACT_BYTECODE
+    with bytecode_file.open('r') as bytecode_file_content:
+        bytecode = bytecode_file_content.read()
+    abi_file = importlib.resources.files(
+        _CONTRACT_ABI_PACKAGE) / _ERC20_CONTRACT_ABI
+    with abi_file.open('r') as abi_file_content:
+        erc20_abi = abi_file_content.read()
     erc20_contract = node_connections.eth.contract(abi=erc20_abi,
                                                    bytecode=bytecode)
     tx_hash = erc20_contract.constructor(1000, 'TOK', 2, 'TOK').transact(

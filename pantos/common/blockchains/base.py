@@ -749,9 +749,9 @@ class BlockchainUtilities(BlockchainHandler,
             f'{_BASE_CONTRACT_ABI_PACKAGE}.v'
             f'{version.major}_{version.minor}_{version.patch}')
         try:
-            with importlib.resources.open_text(
-                    versioned_contract_abi_package,
-                    contract_abi_file_name) as contract_abi_file:
+            contract_file = importlib.resources.files(
+                versioned_contract_abi_package) / contract_abi_file_name
+            with contract_file.open('r') as contract_abi_file:
                 loaded_contract_abi = json.load(contract_abi_file)
             self.__loaded_contract_abis[contract_abi] = loaded_contract_abi
             return loaded_contract_abi
