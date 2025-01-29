@@ -25,7 +25,6 @@ from pantos.common.blockchains.ethereum import EthereumUtilities
 from pantos.common.blockchains.ethereum import EthereumUtilitiesError
 from pantos.common.entities import TransactionStatus
 from pantos.common.protocol import get_latest_protocol_version
-from pantos.common.protocol import get_supported_protocol_versions
 
 _CONTRACT_ABI_PACKAGE = 'tests.blockchains.contracts'
 """Package that contains the contract ABI files."""
@@ -69,12 +68,14 @@ def ethereum_utilities(mock_create_node_connections, blockchain_node_urls,
 @pytest.fixture
 def deployed_erc20(w3, node_connections):
     default_account = w3.eth.accounts[0]
-    with importlib.resources.open_text(
-            _CONTRACT_ABI_PACKAGE, _ERC20_CONTRACT_BYTECODE) as bytecode_file:
-        bytecode = bytecode_file.read()
-    with importlib.resources.open_text(_CONTRACT_ABI_PACKAGE,
-                                       _ERC20_CONTRACT_ABI) as abi_file:
-        erc20_abi = abi_file.read()
+    bytecode_file = importlib.resources.files(
+        _CONTRACT_ABI_PACKAGE) / _ERC20_CONTRACT_BYTECODE
+    with bytecode_file.open('r') as bytecode_file_content:
+        bytecode = bytecode_file_content.read()
+    abi_file = importlib.resources.files(
+        _CONTRACT_ABI_PACKAGE) / _ERC20_CONTRACT_ABI
+    with abi_file.open('r') as abi_file_content:
+        erc20_abi = abi_file_content.read()
     erc20_contract = node_connections.eth.contract(abi=erc20_abi,
                                                    bytecode=bytecode)
     tx_hash = erc20_contract.constructor(1000, 'TOK', 2, 'TOK').transact(
@@ -268,21 +269,6 @@ def test_is_protocol_version_supported_by_contract_results_not_matching_error(
     with pytest.raises(ResultsNotMatchingError):
         ethereum_utilities.is_protocol_version_supported_by_contract(
             contract_address, versioned_contract_abi)
-
-
-@unittest.mock.patch.object(EthereumUtilities, 'create_contract')
-def test_is_protocol_version_supported_by_contract_not_available_error(
-        mock_create_contract, ethereum_utilities, contract_address):
-    versioned_contract_abi = VersionedContractAbi(
-        ContractAbi.PANTOS_HUB, min(get_supported_protocol_versions()))
-
-    with pytest.raises(EthereumUtilitiesError) as exception_info:
-        ethereum_utilities.is_protocol_version_supported_by_contract(
-            contract_address, versioned_contract_abi)
-
-    assert 'contract function not available' in str(exception_info.value)
-    assert (exception_info.value.details['versioned_contract_abi'] ==
-            versioned_contract_abi)
 
 
 @unittest.mock.patch.object(EthereumUtilities, 'create_contract')

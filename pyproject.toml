@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pantos-common"
-version = "4.3.0"
+version = "5.0.0"
 description = "Common code for Pantos off-chain components."
 authors = ["Pantos GmbH <contact@pantos.io>"]
 license = "GPL-3.0-only"

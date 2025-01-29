@@ -188,6 +188,7 @@ def transaction_adaptable_fee_per_gas():
 
 @pytest.fixture(scope='package', params=ContractAbi)
 def versioned_contract_abi(request, protocol_version):
+    print(">>", protocol_version)
     return VersionedContractAbi(request.param, protocol_version)
 
 
