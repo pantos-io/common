@@ -245,11 +245,6 @@ class EthereumUtilities(BlockchainUtilities):
                                             node_connections)
             match versioned_contract_abi.contract_abi:
                 case ContractAbi.PANTOS_HUB:
-                    if (versioned_contract_abi.version
-                            < semantic_version.Version('0.2.0')):
-                        raise self._create_error(
-                            'contract function not available',
-                            versioned_contract_abi=versioned_contract_abi)
                     protocol_version = \
                         contract.caller().getProtocolVersion().get()
                     assert isinstance(protocol_version, bytes)

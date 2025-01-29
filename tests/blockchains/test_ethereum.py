@@ -25,7 +25,6 @@ from pantos.common.blockchains.ethereum import EthereumUtilities
 from pantos.common.blockchains.ethereum import EthereumUtilitiesError
 from pantos.common.entities import TransactionStatus
 from pantos.common.protocol import get_latest_protocol_version
-from pantos.common.protocol import get_supported_protocol_versions
 
 _CONTRACT_ABI_PACKAGE = 'tests.blockchains.contracts'
 """Package that contains the contract ABI files."""
@@ -270,21 +269,6 @@ def test_is_protocol_version_supported_by_contract_results_not_matching_error(
     with pytest.raises(ResultsNotMatchingError):
         ethereum_utilities.is_protocol_version_supported_by_contract(
             contract_address, versioned_contract_abi)
-
-
-@unittest.mock.patch.object(EthereumUtilities, 'create_contract')
-def test_is_protocol_version_supported_by_contract_not_available_error(
-        mock_create_contract, ethereum_utilities, contract_address):
-    versioned_contract_abi = VersionedContractAbi(
-        ContractAbi.PANTOS_HUB, min(get_supported_protocol_versions()))
-
-    with pytest.raises(EthereumUtilitiesError) as exception_info:
-        ethereum_utilities.is_protocol_version_supported_by_contract(
-            contract_address, versioned_contract_abi)
-
-    assert 'contract function not available' in str(exception_info.value)
-    assert (exception_info.value.details['versioned_contract_abi'] ==
-            versioned_contract_abi)
 
 
 @unittest.mock.patch.object(EthereumUtilities, 'create_contract')

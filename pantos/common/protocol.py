@@ -6,8 +6,8 @@ import typing
 import semantic_version  # type: ignore
 
 _SUPPORTED_PROTOCOL_VERSIONS: typing.Final[set[semantic_version.Version]] = {
-    semantic_version.Version('0.1.0'),
-    semantic_version.Version('0.2.0')
+    semantic_version.Version('0.2.0'),
+    semantic_version.Version('0.3.0')
 }
 
 
