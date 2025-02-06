@@ -2,10 +2,15 @@ import unittest.mock
 import uuid
 
 import pytest
+from celery.exceptions import Retry  # type: ignore
 
+from pantos.common.blockchains.base import BlockchainUtilities
 from pantos.common.blockchains.base import BlockchainUtilitiesError
 from pantos.common.blockchains.base import MaxTotalFeePerGasExceededError
+from pantos.common.blockchains.base import ResultsNotMatchingError
 from pantos.common.blockchains.factory import initialize_blockchain_utilities
+from pantos.common.blockchains.tasks import \
+    _dependent_transaction_submission_task
 from pantos.common.blockchains.tasks import _transaction_resubmission_task
 from pantos.common.blockchains.tasks import \
     create_transaction_resubmission_task
@@ -131,3 +136,105 @@ def test_transaction_resubmission_task_resubmit_transaction_error(
                                        transaction_blocks_until_resubmission,
                                        transaction_id,
                                        transaction_resubmission_request_dict)
+
+
+@pytest.mark.parametrize(
+    'transaction_status',
+    [TransactionStatus.UNINCLUDED, TransactionStatus.UNCONFIRMED])
+@unittest.mock.patch(
+    'pantos.common.blockchains.tasks.get_blockchain_utilities')
+def test_dependent_transaction_submission_task_prerequisite_tx_not_included(
+        mocked_get_blockchain_utilities, transaction_status, blockchain,
+        transaction_submission_start_request_dict, transaction_id):
+    mocked_get_blockchain_utilities() \
+        .get_transaction_submission_status.return_value = \
+        BlockchainUtilities.TransactionSubmissionStatusResponse(
+            False, transaction_status, transaction_id)
+
+    with pytest.raises(Retry):
+        _dependent_transaction_submission_task(
+            blockchain.value, str(uuid.uuid4()), 0, 0,
+            transaction_submission_start_request_dict)
+
+
+@unittest.mock.patch(
+    'pantos.common.blockchains.tasks.get_blockchain_utilities')
+def test_dependent_transaction_submission_task_prerequisite_tx_reverted(
+        mocked_get_blockchain_utilities, blockchain,
+        transaction_submission_start_request_dict, transaction_id):
+    mocked_get_blockchain_utilities() \
+        .get_transaction_submission_status.return_value = \
+        BlockchainUtilities.TransactionSubmissionStatusResponse(
+            True, TransactionStatus.REVERTED, transaction_id)
+
+    return_value = _dependent_transaction_submission_task(
+        blockchain.value, str(uuid.uuid4()), 0, 0,
+        transaction_submission_start_request_dict)
+
+    assert return_value is False
+
+
+@pytest.mark.parametrize('error',
+                         [ResultsNotMatchingError, BlockchainUtilitiesError])
+@unittest.mock.patch(
+    'pantos.common.blockchains.tasks.get_blockchain_utilities')
+def test_dependent_transaction_submission_task_prerequisite_tx_receipt_missing(
+        mocked_get_blockchain_utilities, error, blockchain,
+        transaction_submission_start_request_dict, transaction_id):
+
+    mocked_get_blockchain_utilities() \
+        .get_transaction_submission_status.return_value = \
+        BlockchainUtilities.TransactionSubmissionStatusResponse(
+            True, TransactionStatus.CONFIRMED, transaction_id)
+    mocked_get_blockchain_utilities() \
+        .get_number_of_confirmations.side_effect = error
+
+    with pytest.raises(Retry):
+        _dependent_transaction_submission_task(
+            blockchain.value, str(uuid.uuid4()), 0, 0,
+            transaction_submission_start_request_dict)
+
+
+@unittest.mock.patch(
+    'pantos.common.blockchains.tasks.get_blockchain_utilities')
+def test_dependent_transaction_submission_task_submit_dependent_tx(
+        mocked_get_blockchain_utilities, commit_wait_period, blockchain,
+        transaction_submission_start_request_dict,
+        transaction_submission_start_request, transaction_id):
+
+    mocked_get_blockchain_utilities() \
+        .get_transaction_submission_status.return_value = \
+        BlockchainUtilities.TransactionSubmissionStatusResponse(
+            True, TransactionStatus.CONFIRMED, transaction_id)
+    mocked_get_blockchain_utilities() \
+        .get_number_of_confirmations.return_value = \
+        (TransactionStatus.CONFIRMED, commit_wait_period)
+
+    _dependent_transaction_submission_task(
+        blockchain.value, str(uuid.uuid4()), commit_wait_period, 0,
+        transaction_submission_start_request_dict)
+
+    mocked_get_blockchain_utilities(
+    ).start_transaction_submission.assert_called_with(
+        transaction_submission_start_request)
+
+
+@unittest.mock.patch(
+    'pantos.common.blockchains.tasks.get_blockchain_utilities')
+def test_dependent_transaction_submission_task_prereq_tx_not_enough_confs(
+        mocked_get_blockchain_utilities, commit_wait_period, blockchain,
+        transaction_submission_start_request_dict,
+        transaction_submission_start_request, transaction_id):
+
+    mocked_get_blockchain_utilities() \
+        .get_transaction_submission_status.return_value = \
+        BlockchainUtilities.TransactionSubmissionStatusResponse(
+            True, TransactionStatus.CONFIRMED, transaction_id)
+    mocked_get_blockchain_utilities() \
+        .get_number_of_confirmations.return_value = \
+        (TransactionStatus.CONFIRMED, commit_wait_period / 2)
+
+    with pytest.raises(Retry):
+        _dependent_transaction_submission_task(
+            blockchain.value, str(uuid.uuid4()), commit_wait_period, 0,
+            transaction_submission_start_request_dict)
