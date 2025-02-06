@@ -1,15 +1,8 @@
 import json
-import unittest.mock
 
 import pytest
 import werkzeug.exceptions
 
-from pantos.common.blockchains.base import GENERAL_RPC_ERROR_MESSAGE
-from pantos.common.blockchains.base import UnhealthyNode
-from pantos.common.blockchains.enums import Blockchain
-from pantos.common.exceptions import NotInitializedError
-from pantos.common.health import NodesHealth
-from pantos.common.restapi import NodesHealthResource
 from pantos.common.restapi import bad_request
 from pantos.common.restapi import conflict
 from pantos.common.restapi import forbidden
@@ -39,68 +32,6 @@ def error_message_dict():
         'second_property': 'second error message',
         'third_property': 'third error message'
     }
-
-
-@unittest.mock.patch('pantos.common.restapi.check_blockchain_nodes_health')
-def test_nodes_health_resource_correct(mocked_check_blockchain_nodes_health):
-    mocked_check_blockchain_nodes_health.return_value = {
-        Blockchain.ETHEREUM: NodesHealth(1, 0, []),
-        Blockchain.BNB_CHAIN: NodesHealth(0, 2, [
-            UnhealthyNode('node1_domain', GENERAL_RPC_ERROR_MESSAGE),
-            UnhealthyNode('node2_domain', GENERAL_RPC_ERROR_MESSAGE)
-        ])
-    }
-    nodes_health_resource = NodesHealthResource()
-
-    response = nodes_health_resource.get()
-
-    assert response.status_code == 200
-    assert json.loads(response.data) == {
-        'Ethereum': {
-            'healthy_total': 1,
-            'unhealthy_total': 0,
-            'unhealthy_nodes': []
-        },
-        'Bnb_chain': {
-            'healthy_total': 0,
-            'unhealthy_total': 2,
-            'unhealthy_nodes': [{
-                'node_domain': 'node1_domain',
-                "status": GENERAL_RPC_ERROR_MESSAGE
-            }, {
-                'node_domain': "node2_domain",
-                'status': GENERAL_RPC_ERROR_MESSAGE
-            }]
-        }
-    }
-
-
-@unittest.mock.patch('pantos.common.restapi.check_blockchain_nodes_health')
-def test_nodes_health_resource_uninitialized_nodes(
-        mocked_check_blockchain_nodes_health):
-    mocked_check_blockchain_nodes_health.side_effect = NotInitializedError('')
-    nodes_health_resource = NodesHealthResource()
-
-    with pytest.raises(werkzeug.exceptions.HTTPException) as exception_info:
-        nodes_health_resource.get()
-
-    assert isinstance(exception_info.value,
-                      werkzeug.exceptions.InternalServerError)
-    assert exception_info.value.data[
-        'message'] == 'no blockchain nodes have been initialized yet'
-
-
-@unittest.mock.patch('pantos.common.restapi.check_blockchain_nodes_health')
-def test_nodes_health_resource_exception(mocked_check_blockchain_nodes_health):
-    mocked_check_blockchain_nodes_health.side_effect = Exception
-    nodes_health_resource = NodesHealthResource()
-
-    with pytest.raises(werkzeug.exceptions.HTTPException) as exception_info:
-        nodes_health_resource.get()
-
-    assert isinstance(exception_info.value,
-                      werkzeug.exceptions.InternalServerError)
-    assert exception_info.value.data['message'] is None
 
 
 def test_ok_response():
