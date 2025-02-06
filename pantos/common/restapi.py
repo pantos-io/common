@@ -18,9 +18,11 @@ _logger = logging.getLogger(__name__)
 
 class _UnhealthyNodeSchema(marshmallow.Schema):
     node_domain = marshmallow.fields.String(
-        required=True, description="The domain of the unhealthy node")
+        required=True,
+        metadata={'description': "The domain of the unhealthy node"})
     status = marshmallow.fields.String(
-        required=True, description="The status of the unhealthy node")
+        required=True,
+        metadata={'description': "The status of the unhealthy node"})
 
 
 class _BlockchainStatusSchema(marshmallow.Schema):

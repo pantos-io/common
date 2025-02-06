@@ -1179,6 +1179,27 @@ class BlockchainUtilities(BlockchainHandler,
         return internal_transaction_id
 
     @dataclasses.dataclass
+    class DependentTransactionSubmissionStartRequest(
+            TransactionSubmissionStartRequest):
+        """Request data for starting a dependent transaction submission.
+
+        Attributes
+        ----------
+        dependent_internal_id : str
+            The internal id of the dependent transaction.
+        blocks_to_wait : int
+            The number of blocks the transaction we depend on requires, until
+            we can submit our transaction.
+        average_block_time : int
+            The average time in seconds required to generate a new block of
+            the blockchain.
+
+        """
+        dependent_internal_id: str
+        blocks_to_wait: int
+        average_block_time: int
+
+    @dataclasses.dataclass
     class TransactionSubmissionStatusResponse:
         """Response data from retrieving the status of a transaction
         submission.
