@@ -839,6 +839,36 @@ class BlockchainUtilities(BlockchainHandler,
         """
         pass  # pragma: no cover
 
+    @abc.abstractmethod
+    def get_number_of_confirmations(
+        self, transaction_id: str,
+        node_connections: typing.Optional[NodeConnections] = None
+    ) -> tuple[TransactionStatus, int]:
+        """Get the number of confirmations of a transaction.
+
+        Parameters
+        ----------
+        transaction_id : str
+            The ID/hash of the transaction.
+        node_connections : NodeConnections, optional
+            The node connections object to be used (default: None).
+
+        Returns
+        -------
+        tuple[TransactionStatus, int]
+            The transaction's current status and the number of confirmations.
+
+        Raises
+        ------
+        BlockchainUtilitiesError
+            If the transaction status cannot be read.
+        ResultsNotMatchingError
+            If the results given by the configured blockchain
+            nodes do not match.
+
+        """
+        pass  # pragma: no cover
+
     @dataclasses.dataclass
     class TransactionSubmissionRequest:
         """Request data for submitting a transaction.

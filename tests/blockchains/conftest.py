@@ -29,6 +29,8 @@ _ACCOUNT_PRIVATE_KEY = \
 
 _AVERAGE_BLOCK_TIME = 14
 
+_COMMIT_WAIT_PERIOD = 10
+
 _BLOCKCHAIN_NODE_URL = 'https://some.url'
 
 _FALLBACK_BLOCKCHAIN_NODE_URL = 'https://some2.url'
@@ -89,6 +91,11 @@ def account():
 @pytest.fixture(scope='package', params=Blockchain)
 def blockchain(request):
     return request.param
+
+
+@pytest.fixture(scope='package')
+def commit_wait_period():
+    return _COMMIT_WAIT_PERIOD
 
 
 @pytest.fixture(
@@ -188,7 +195,6 @@ def transaction_adaptable_fee_per_gas():
 
 @pytest.fixture(scope='package', params=ContractAbi)
 def versioned_contract_abi(request, protocol_version):
-    print(">>", protocol_version)
     return VersionedContractAbi(request.param, protocol_version)
 
 
@@ -256,6 +262,12 @@ def transaction_submission_start_request(
         transaction_max_total_fee_per_gas, transaction_amount,
         transaction_nonce, transaction_adaptable_fee_increase_factor,
         transaction_blocks_until_resubmission)
+
+
+@pytest.fixture
+def transaction_submission_start_request_dict(
+        transaction_submission_start_request):
+    return transaction_submission_start_request.to_dict()
 
 
 @pytest.fixture(scope='package')

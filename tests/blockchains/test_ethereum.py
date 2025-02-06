@@ -409,6 +409,52 @@ def test_read_transaction_status_results_not_matching_error(
             ethereum_utilities.read_transaction_status(transaction_id)
 
 
+@unittest.mock.patch.object(EthereumUtilities, '_get_transaction_block_number')
+@pytest.mark.parametrize('transaction_parameters',
+                         [(990, 1000, TransactionStatus.CONFIRMED),
+                          (1000, 1000, TransactionStatus.UNINCLUDED)])
+def test_get_number_of_confirmations_correct(
+        mocked_get_transaction_block_number, transaction_parameters,
+        ethereum_utilities, w3, transaction_id):
+    mocked_get_transaction_block_number.return_value = transaction_parameters[
+        0]
+    with unittest.mock.patch.object(w3.eth, 'get_block_number',
+                                    return_value=transaction_parameters[1]):
+        status, number_of_confirmations = \
+            ethereum_utilities.get_number_of_confirmations(transaction_id)
+
+    confirmations = transaction_parameters[1] - transaction_parameters[0]
+    assert status == transaction_parameters[2]
+    assert number_of_confirmations == confirmations
+
+
+@unittest.mock.patch.object(EthereumUtilities, '_get_transaction_block_number')
+def test_get_number_of_confirmations_tx_not_found(
+        mocked_get_transaction_block_number, ethereum_utilities, w3,
+        transaction_id):
+    mocked_get_transaction_block_number.side_effect = \
+        web3.exceptions.TransactionNotFound
+
+    status, number_of_confirmations = \
+        ethereum_utilities.get_number_of_confirmations(transaction_id)
+
+    assert status == TransactionStatus.UNINCLUDED
+    assert number_of_confirmations == 0
+
+
+@unittest.mock.patch.object(EthereumUtilities, '_get_transaction_block_number')
+def test_get_number_of_confirmations_tx_block_number_none(
+        mocked_get_transaction_block_number, ethereum_utilities, w3,
+        transaction_id):
+    mocked_get_transaction_block_number.return_value = None
+
+    status, number_of_confirmations = \
+        ethereum_utilities.get_number_of_confirmations(transaction_id)
+
+    assert status == TransactionStatus.UNINCLUDED
+    assert number_of_confirmations == 0
+
+
 @pytest.mark.parametrize('type_2_transaction', [True, False])
 @unittest.mock.patch.object(EthereumUtilities,
                             '_type_2_transactions_supported')

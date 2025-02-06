@@ -13,6 +13,7 @@ from pantos.common.blockchains.factory import get_blockchain_utilities
 from pantos.common.entities import TransactionStatus
 
 _MAX_TRANSACTION_RESUBMISSION_TASK_RETRIES = 1000
+_MAX_DEPENDENT_TRANSACTION_CHECKS_TASK_RETRIES = 100
 
 TransactionResubmissionRequest = \
     BlockchainUtilities.TransactionResubmissionRequest
@@ -163,3 +164,86 @@ def _transaction_resubmission_task(
         TransactionStatus.CONFIRMED, TransactionStatus.REVERTED
     ]
     return transaction_status.value, transaction_id
+
+
+@celery.shared_task(bind=True,
+                    max_retries=_MAX_DEPENDENT_TRANSACTION_CHECKS_TASK_RETRIES)
+def _dependent_transaction_submission_task(
+        self, blockchain_id: int, prerequisite_internal_id: str,
+        blocks_to_wait: int, average_block_time: int,
+        request: dict[str, typing.Any]) -> bool | str:
+    """Task which checks the status of a prerequisite transaction and submits
+    a dependent transaction if the prerequisite transaction is confirmed.
+
+    Parameters
+    ----------
+    blockchain_id : int
+        The ID of the blockchain the transactions are submitted to.
+    prerequisite_internal_id : str
+        The internal ID of the prerequisite transaction.
+    blocks_to_wait : int
+        The number of blocks to wait for the prerequisite transaction to be
+        confirmed.
+    average_block_time : int
+        The average block time of the blockchain.
+    request : dict
+        The request for starting the dependent transaction submission. The dict
+        should contain attributes of the TransactionSubmissionStartRequest
+        class.
+
+    Returns
+    -------
+    bool or str
+        False if the prerequisite transaction has been reverted, else the
+        internal ID of the dependent transaction.
+    """
+    blockchain = Blockchain(blockchain_id)
+    blockchain_utils = get_blockchain_utilities(blockchain)
+    prerequisite_internal_uuid = uuid.UUID(prerequisite_internal_id)
+    status = blockchain_utils.get_transaction_submission_status(
+        prerequisite_internal_uuid)
+
+    task_info = {
+        'blockchain': blockchain,
+        'prerequisite_internal_id': prerequisite_internal_id,
+        'required_blocks_to_wait': blocks_to_wait
+    }
+
+    if status.transaction_status in [
+            TransactionStatus.UNCONFIRMED, TransactionStatus.UNINCLUDED
+    ]:
+        _logger.info(
+            "Prerequisite transaction "
+            "is not confirmed yet. Retrying...", extra=task_info)
+        raise self.retry(countdown=average_block_time)
+    task_info = task_info | {
+        'prerequisite_transaction_id': status.transaction_id
+    }
+    if status.transaction_status == TransactionStatus.REVERTED:
+        _logger.info("Prerequisite transaction reverted. Aborting...",
+                     extra=task_info)
+        return False
+
+    if status.transaction_status == TransactionStatus.CONFIRMED:
+        _logger.info("Prerequisite transaction is confirmed.", extra=task_info)
+        try:
+            transaction_status, number_of_confirmations = \
+                blockchain_utils.get_number_of_confirmations(
+                    status.transaction_id)  # type: ignore
+            _logger.info(
+                "No. of confirmations for prerequisite transaction: "
+                f"{number_of_confirmations}", extra=task_info)
+        except Exception:
+            _logger.exception(
+                "Unable to get number of confirmations "
+                f"on {blockchain.name}. Going to retry...", extra=task_info)
+            raise self.retry(countdown=average_block_time)
+        if number_of_confirmations >= blocks_to_wait:
+            # Submit the dependent transaction
+            _logger.info("Submitting dependent transaction...")
+            following_request = BlockchainUtilities \
+                .TransactionSubmissionStartRequest.from_dict(request)
+            return str(
+                blockchain_utils.start_transaction_submission(
+                    following_request))
+    raise self.retry(countdown=average_block_time)
