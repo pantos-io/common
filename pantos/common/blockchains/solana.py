@@ -96,6 +96,13 @@ class SolanaUtilities(BlockchainUtilities):
         # Docstring inherited
         raise NotImplementedError  # pragma: no cover
 
+    def get_number_of_confirmations(
+        self, transaction_id: str,
+        node_connections: typing.Optional[NodeConnections] = None
+    ) -> tuple[TransactionStatus, int]:
+        # Docstring inherited
+        raise NotImplementedError
+
     def submit_transaction(
             self, request: BlockchainUtilities.TransactionSubmissionRequest,
             node_connections: typing.Optional[NodeConnections] = None) \

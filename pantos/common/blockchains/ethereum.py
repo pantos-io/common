@@ -336,6 +336,46 @@ class EthereumUtilities(BlockchainUtilities):
                 'unable to read the status of a transaction',
                 transaction_id=transaction_id)
 
+    def get_number_of_confirmations(
+        self, transaction_id: str,
+        node_connections: typing.Optional[NodeConnections] = None
+    ) -> tuple[TransactionStatus, int]:
+        # Docstring inherited
+        try:
+            node_connections = self.__get_node_connections(node_connections)
+            try:
+                transaction_block_number = self._get_transaction_block_number(
+                    transaction_id, node_connections)
+            except web3.exceptions.TransactionNotFound:
+                return (TransactionStatus.UNINCLUDED, 0)
+            if transaction_block_number is None:
+                return (TransactionStatus.UNINCLUDED, 0)
+            current_block_number = \
+                node_connections.eth.get_block_number().get_minimum_result()
+            confirmations = current_block_number - transaction_block_number
+            if confirmations == 0:
+                return (TransactionStatus.UNINCLUDED, 0)
+            return (TransactionStatus.CONFIRMED, confirmations)
+        except ResultsNotMatchingError:
+            raise
+        except Exception:
+            raise self._create_error(
+                'unable to read the status of a transaction',
+                transaction_id=transaction_id)
+
+    def _get_transaction_block_number(
+        self, transaction_id: str,
+        node_connections: typing.Optional[NodeConnections] = None
+    ) -> int | None:
+        node_connections = self.__get_node_connections(node_connections)
+        transaction_receipt = \
+            node_connections.eth.get_transaction_receipt(
+                typing.cast(web3.types.HexStr, transaction_id)).get()
+        assert (transaction_receipt['transactionHash'].to_0x_hex() ==
+                transaction_id)
+        transaction_block_number = transaction_receipt['blockNumber']
+        return transaction_block_number
+
     def submit_transaction(
             self, request: BlockchainUtilities.TransactionSubmissionRequest,
             node_connections: typing.Optional[NodeConnections] = None) \
