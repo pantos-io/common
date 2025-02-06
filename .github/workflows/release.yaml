@@ -65,7 +65,9 @@ jobs:
           # Copy the file
           cp tmp/wheel/*.dist-info/METADATA tmp/sdist/*/PKG-INFO
           # Tar the sdist again
-          tar -czf dist/$(ls dist | grep .tar.gz) -C tmp/sdist/ .
+          cd tmp/sdist/*
+          tar -czf ../../../dist/$(basename ../../../dist/*.tar.gz) *
+          cd ../../..
           # Remove the temporary directories
           rm -rf tmp
 
@@ -95,10 +97,6 @@ jobs:
         with:
           name: common
           path: dist
-
-      - name: Remove all non wheel files
-        run: |
-          find dist -type f -not -name "*.whl" -delete
 
       - name: Publish package distributions to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
