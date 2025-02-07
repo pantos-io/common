@@ -45,9 +45,6 @@ jobs:
 
       - uses: pantos-io/ci-workflows/.github/actions/install-poetry@v1
 
-      - name: Check poetry version
-        run: poetry --version
-
       - name: Build package
         run: |
           make check-version VERSION=${{ needs.define-environment.outputs.version }}
