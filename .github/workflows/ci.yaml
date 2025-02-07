@@ -14,7 +14,13 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
+        - uses: actions/checkout@v4
+
         - uses: pantos-io/ci-workflows/.github/actions/install-poetry@v1
 
         - name: Check poetry version
-          run: poetry --version
+          run: |
+            poetry --version
+            ls
+            make build
+            ls dist
