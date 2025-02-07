@@ -65,9 +65,9 @@ jobs:
           # Copy the file
           cp tmp/wheel/*.dist-info/METADATA tmp/sdist/*/PKG-INFO
           # Tar the sdist again
-          cd tmp/sdist/*
-          tar -czf ../../../dist/$(basename ../../../dist/*.tar.gz) *
-          cd ../../..
+          cd tmp/sdist
+          tar -czf ../../dist/$(basename ../../../dist/*.tar.gz) *
+          cd ../..
           # Remove the temporary directories
           rm -rf tmp
 

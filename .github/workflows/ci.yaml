@@ -9,17 +9,3 @@ on:
 jobs:
   shared:
     uses: pantos-io/ci-workflows/.github/workflows/python-ci.yml@v1
-
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    steps:
-        - uses: actions/checkout@v4
-
-        - uses: pantos-io/ci-workflows/.github/actions/install-poetry@v1
-
-        - name: Check poetry version
-          run: |
-            poetry --version
-            make build
-            tar -tzf dist/pantos_common-6.0.0.tar.gz
