@@ -21,6 +21,5 @@ jobs:
         - name: Check poetry version
           run: |
             poetry --version
-            ls
             make build
-            ls dist
+            tar -tzf dist/pantos_common-6.0.0.tar.gz
